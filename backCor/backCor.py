@@ -1,79 +1,718 @@
-from tkinter import *
-from tkinter.font import Font
 
-# Setting window
-root = Tk()
-root.title("Background Correction")
-root.resizable(0,0)
+# matplotlib
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.figure import Figure
+from matplotlib.ticker import MultipleLocator
 
+from functools import partial
 
-# Top level menu
-menuBar = Menu(root)
-root.config(menu = menuBar)
-# File
-fileMenu = Menu(menuBar,tearoff = 0)
-fileMenu.add_command(label = "Open" )
-fileMenu.add_command(label = "Save")
-fileMenu.add_separator()
-fileMenu.add_command(label = "Settings")
-fileMenu.add_separator()
-fileMenu.add_command(label = "Exit")
-menuBar.add_cascade(label = "File", menu = fileMenu)
-# Edit
-editMenu = Menu(menuBar, tearoff=0)
-menuBar.add_cascade(label="Edit", menu=editMenu)
+#tkinter
+import tkinter as tk
+from tkinter import ttk
+from ttkthemes import ThemedStyle
 
+#dataReader
+from dataReader import DataReader
 
+# Data
+from dataBlock import Data
 
-backcorFont = Font(family = "Roboto", size = "12")
+# polyApprox
+from polyApprox import PolyApprox,PolyApproxIdx
 
-# PLOT FRAME
-plotFrame = Frame(root,height = "650",width = "950",bg = 'white',bd = 0)
-plotFrame.pack(side = LEFT)
-plotFrame.pack_propagate(0)
+#numpy
+import numpy as np
 
-# Canvas
-plotCanvas = Canvas(plotFrame, bg = 'mediumseagreen')
-plotCanvas.pack(fill = BOTH, expand = 1, padx = 35, pady = 35)
+#os
+import os as os
+
+#re
+import re
 
 
+# Style
+# atom/one/dark/background = #282c34
+# atom/one/dark/currentline = #0A99bbff
+# atom/one/dark/currentcell = #00000000
+# atom/one/dark/occurrence = #434957
+# atom/one/dark/ctrlclick = #56b6c2
+# atom/one/dark/sideareas = #21252b
+# atom/one/dark/matched_p = #434957
+# atom/one/dark/unmatched_p = #4Dff0000
 
 
-# CONTROLS FRAME
-controlsFrame = Frame(root,height = "650",width = "350", bd = 0)
-controlsFrame.pack(side = RIGHT)
-controlsFrame.pack_propagate(0)
+###############################################################################
 
+# BackCor
+class BackCor(tk.Tk):
 
-#cost function - dropdown menu
-costFunLabel = Label(controlsFrame,text = "Cost Function:",anchor = "w",font = backcorFont)
-costFunLabel.pack(fill = X ,padx = 50,pady = (50,10))
-costFunVal = StringVar(root)     #options value
-costFunOptions = {"Symmetric Huber function","Asymmetric Huber function","Symmetric truncated quadratic","Asymmetric truncated quadratic"}
-costFunMenu = OptionMenu(controlsFrame, costFunVal, *costFunOptions)
-costFunMenu.config(font = backcorFont)
-costFunMenu['menu'].config(font=backcorFont)
-costFunMenu.config(font = backcorFont)
-costFunMenu.pack(fill = X,padx = 50)
+    def __init__(self,parent):
+        tk.Tk.__init__(self,parent)
 
-#threshold - spinbox
-thrLabel = Label(controlsFrame,text = "Threshold:",anchor = "w",font = backcorFont)
-thrLabel.pack(fill = X ,padx = 50,pady = (50,10))
-#ordine del threshold?
-#slider?
-thrValue = StringVar(root)      # value
-thrEntry = Spinbox(controlsFrame,from_ = 0,to = 10,increment = 0.1,textvariable = thrValue,font = backcorFont)
-thrEntry.pack(fill = X ,padx = 50)
+        # Constants
+        self.home = os.path.expanduser('~')
+        self.setStyle()         # Style
+        self.setWindowInfo()    # Window
+        self.parent = parent
 
+        # Data container
+        data = Data(None,None,None)
+        cleanData = Data(None,None,None)
 
-#polynomial order -slider
-polyOrdLabel = Label(controlsFrame,text = "Polynomial Order:",anchor = "w",font = backcorFont)
-polyOrdLabel.pack(fill = X ,padx = 50,pady = (50,0))
-polyOrdVal = IntVar(root)      #slider value
-polyOrdSlider = Scale(controlsFrame,from_ = 1,to = 20,orient = HORIZONTAL)
-polyOrdSlider.pack(fill = X ,padx = 50)
+        # MenuBar
+        menuBar = MenuBar(self,data)
+
+        # PlotFrame
+        pFrame = PlotFrame(self)
+        self.pFrame = pFrame
+
+        # ControlsFrame
+        cFrame = ControlsFrame(self,data,cleanData)
+        self.cFrame = cFrame
 
 
 
-# Executing window
-root.mainloop()
+    # Set style
+    def setStyle(self):
+        s = ThemedStyle()
+        s.configure('TFrame',background = '#21252b')
+        s.configure('TNotebook',background = '#282c34',padding = 30,tabmargins = 0)
+        s.configure('controls.TFrame',background = '#282c34')
+        s.configure('TLabel',background = '#282c34',foreground = 'white',font = ('Poppins',11))
+        s.configure('TButton',font = ('Poppins',11))
+
+        plotFont = {'color': 'white','size': 12}
+
+    # Setting finestra
+    def setWindowInfo(self):
+        # Dimensioni finestra
+        width = self.winfo_screenwidth()
+        height = self.winfo_screenheight()
+        # self.geometry("%dx%d+0+0" % (width,heigth))
+        self.geometry("%dx%d+0+0" % (width/2,height/2))
+        # minimum size
+        self.minsize(int(width/2),int(height/2))
+        #Title
+        self.title("backCor")
+        #Background color
+        # self.configure(background = "#282C34")
+
+        for i in range(0,100):
+            self.rowconfigure(i, weight = 1)
+            self.columnconfigure(i, weight = 1)
+
+
+
+###############################################################################
+
+
+# MenuBar
+class MenuBar(tk.Menu):
+    def __init__(self,parent,data):
+        tk.Menu.__init__(self,parent)
+        self.parent = parent
+        # Setting menubar as window menu
+        parent.config(menu = self)
+
+        # File
+        fileMenu = tk.Menu(self,tearoff = 0)
+        fileMenu.add_command(label = "Open",command = partial(self.openFile,data))
+        fileMenu.add_separator()
+        fileMenu.add_command(label = "Settings")
+        fileMenu.add_separator()
+        fileMenu.add_command(label = "Exit",command = parent.destroy)
+        self.add_cascade(label = "File", menu = fileMenu)
+
+        # Edit
+        editMenu = tk.Menu(self, tearoff = 0)
+        self.add_cascade(label="Edit", menu = editMenu)
+
+
+    def openFile(self,data):
+
+        # Browse file dialog
+        f = self.browseFile()
+
+        # Lettura del file
+        dataR = DataReader(fileName = f)
+        data.pointsPerSpectrum = dataR.pointsPerSpectrum
+        data.ramanShift = dataR.ramanShift
+        data.spectraData = dataR.spectraData
+        if len(dataR.spectraData) == dataR.pointsPerSpectrum:
+            data.nSpectra = 1
+        else:
+            data.nSpectra = len(dataR.spectraData)
+
+        # Load data
+        self.loadData(data)
+
+    def browseFile(self):
+        f = tk.filedialog.askopenfilename(
+            parent = self.parent,
+            initialdir = 'C:/Users/Luca/Desktop/Lab/Analisi morfologica/B/',title = 'Choose file',
+            filetypes = [('wdf files','.wdf'),
+                         ('text files','.txt')]
+            )
+        # f = tk.filedialog.askopenfilename(
+        #     parent = self.parent,
+        #     initialdir = self.parent.home,title = 'Choose file',
+        #     filetypes = [('wdf files','.wdf'),
+        #                  ('text files','.txt')]
+        #     )
+        return f
+
+    def loadData(self,data):
+        # pframe
+        ax = self.parent.pFrame.ax
+        fig = self.parent.pFrame.fig
+        canvas = self.parent.pFrame.canvas
+
+        # cframe
+        nSpectra = self.parent.cFrame.nSpectra
+        minIdxEntry = self.parent.cFrame.minIdxEntry
+        maxIdxEntry = self.parent.cFrame.maxIdxEntry
+        minIdxSpectra = self.parent.cFrame.minIdxSpectra
+        maxIdxSpectra = self.parent.cFrame.maxIdxSpectra
+        costFunMenu = self.parent.cFrame.costFunMenu
+        thrSlider = self.parent.cFrame.thrSlider
+        polyOrdSlider = self.parent.cFrame.polyOrdSlider
+        cntSlider = self.parent.cFrame.cntSlider
+        subButton = self.parent.cFrame.subButton
+        backButton = self.parent.cFrame.backButton
+        exportButton = self.parent.cFrame.exportButton
+
+
+        # data
+        pointsPerSpectrum = data.pointsPerSpectrum
+        ramanShift = data.ramanShift
+        spectraData = data.spectraData
+
+
+        # message box chiudi finestra si/no
+        # se non ci sono plot plotta, se ci sono plot chiedi
+        if ax.lines:
+            res = tk.messagebox.askyesno("Chiudere la finestra?","Sei sicuro di voler chiudere questa finestra?")
+            if res:
+                ax.cla()
+                ax.tick_params(axis='both', colors='white',labelsize = 12)
+                ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
+                ax.set_ylabel("Counts",fontsize = 15,color = "white")
+
+
+        # Check sul numero degli spettri (caso spettro singolo)
+        spectraCheck = data.nSpectra
+        if spectraCheck == 1:
+            ax.plot(ramanShift,spectraData)
+            # setta a 1 il numero max di spettri
+            maxIdxSpectra.set(1)
+            # setta a 1 il numero di spettro
+            self.parent.cFrame.nSpectra.set(1)
+            #disbilita le entry
+            minIdxEntry.configure(state = tk.DISABLED)
+            maxIdxEntry.configure(state = tk.DISABLED)
+            # buttons
+            subButton.configure(state = tk.NORMAL)
+            backButton.configure(state = tk.DISABLED)
+            exportButton.configure(state = tk.DISABLED)
+            # abilita cost function
+            costFunMenu.configure(state = tk.NORMAL)
+            #  abilita polyOrd
+            polyOrdSlider.configure(state = tk.NORMAL)
+            # abilita threshold
+            thrSlider.configure(state = tk.NORMAL)
+            # abilita counts adjust
+            cntSlider.configure(state = tk.NORMAL)
+
+        else:
+            #setta la label del numero di spettri
+            nSpectra.set(data.nSpectra)
+            # abilita le entry
+            minIdxEntry.configure(state = tk.NORMAL)
+            maxIdxEntry.configure(state = tk.NORMAL)
+            # buttons
+            subButton.configure(state = tk.DISABLED)
+            backButton.configure(state = tk.DISABLED)
+            exportButton.configure(state = tk.DISABLED)
+            # abilita cost function
+            costFunMenu.configure(state = tk.DISABLED)
+            #  abilita polyOrd
+            polyOrdSlider.configure(state = tk.DISABLED)
+            # abilita threshold
+            thrSlider.configure(state = tk.DISABLED)
+
+            # setta i default delle entry
+            minIdxSpectra.set(0)
+            maxIdxSpectra.set(data.nSpectra - 1)
+            #plot spettri
+            for spectrum in spectraData:
+                ax.plot(ramanShift,spectrum)
+
+
+
+        # setting plot limits
+        l = ramanShift[0]
+        r = ramanShift[-1]
+        ax.set_xlim(l,r)
+
+        canvas.draw()
+
+
+###############################################################################
+
+#PlotFrame
+class PlotFrame(ttk.Frame):
+
+    def __init__(self,parent):
+        ttk.Frame.__init__(self,parent)
+        self.parent = parent
+
+        self.grid(row = 0, column = 0, columnspan = 90,rowspan = 100,sticky = "news")
+        self.columnconfigure(0,weight = 1)
+        self.rowconfigure(0,weight = 1)
+
+        fig = Figure(figsize=(4,4),dpi=70,constrained_layout=True)
+        fig.patch.set_facecolor('#21252b')
+
+        ax = fig.add_subplot(111)
+        # ax.fmt_xdata = lambda x:'{:.4f}'.format(x)
+        # ax.fmt_ydata = lambda y:'{:.4f}'.format(y)
+        ax.format_coord = lambda x, y: ''
+        ax.tick_params(axis='both', colors='white',labelsize = 12)
+        ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
+        ax.set_ylabel("Counts",fontsize = 15,color = "white")
+
+
+        canvas = FigureCanvasTkAgg(fig, master = self)
+        canvas.get_tk_widget().grid(row = 0, column = 0,sticky = 'news',padx = 40, pady = 40)
+        canvas.draw()
+        # #
+        # toolbarFrame = ttk.Frame(parent)
+        # toolbarFrame.grid(row = 100, column = 0)
+        # toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
+        # toolbar.update()
+
+        #custom navigation toolbar 2Tk
+        # TODO: Custom navigation tool
+
+        self.canvas = canvas
+        self.ax = ax
+        self.fig = fig
+
+
+###############################################################################
+
+#ControlsFrame
+class ControlsFrame(ttk.Frame):
+
+    def __init__(self,parent,data,cleanData):
+        ttk.Frame.__init__(self,parent)
+        self.parent = parent
+
+        self.grid(row = 0,column = 90, columnspan = 10, rowspan = 100, sticky = "news")
+        self.configure(style = 'controls.TFrame')
+        self.ax = self.parent.pFrame.ax
+        self.canvas = self.parent.pFrame.canvas
+
+        self.nsLimit = 11
+        self.plotColor = '#4169e1'
+        self.plotSelectedColor = '#ffc445'
+        self.plotApproxColor = '#ff6745'
+        self.dataPath = 'C:/Users/Luca/Desktop/Lab/Analisi morfologica/B/'
+
+
+
+        # Labels
+        self.nSpectra = tk.IntVar()
+        nSpectraTextLabel = ttk.Label(master = self, text = "N° Spettri : ")
+        nSpectraLabel = ttk.Label(master = self, textvariable = self.nSpectra)
+        minIdxLabel = ttk.Label(self,text = "Min Idx: ")
+        maxIdxLabel = ttk.Label(self,text = "Max Idx: ")
+        ghostLabel = ttk.Label(self,text = "          ")
+
+
+
+        # Entries
+        self.minIdxSpectra = tk.IntVar()
+        self.maxIdxSpectra = tk.IntVar()
+        minIdxValidate = self.register(self.validateMinIdx)
+        maxIdxValidate = self.register(partial(self.validateMaxIdx,data))
+        self.minIdxEntry = ttk.Entry(master = self, textvariable = self.minIdxSpectra)
+        self.maxIdxEntry = ttk.Entry(master = self, textvariable = self.maxIdxSpectra)
+        self.minIdxEntry.configure(validate = "key", validatecommand = (minIdxValidate,"%P"))
+        self.maxIdxEntry.configure(validate = "key", validatecommand = (maxIdxValidate,"%P"))
+        self.minIdxEntry.configure(state = tk.DISABLED)
+        self.maxIdxEntry.configure(state = tk.DISABLED)
+        self.minIdxEntry.bind('<Key-Return>',partial(self.checkPlotInput,data))
+        self.maxIdxEntry.bind('<Key-Return>',partial(self.checkPlotInput,data))
+
+
+
+        # idx slider
+        self.selectedIdx = tk.IntVar()
+        selectedIdxTextLabel = ttk.Label(self,text = "Selected Idx:")
+        selectedIdxLabel = ttk.Label(self,textvariable = self.selectedIdx)
+        self.selectedIdxSlider = ttk.Scale(self,orient = tk.HORIZONTAL,command = partial(self.selUpdate,data))
+        self.selectedIdxSlider.configure(state = tk.DISABLED)
+
+
+
+        # cost function - dropdown menu
+        self.costFunVal = tk.StringVar()
+        self.costFunVal.set("Symmetric Huber function")
+        costFunLabel = ttk.Label(self,text = "Cost Function:")
+        self.costFunOptions = {"","Symmetric Huber function","Asymmetric Huber function","Symmetric truncated quadratic","Asymmetric truncated quadratic"}
+        self.costFunMenu = ttk.OptionMenu(self, self.costFunVal,*self.costFunOptions,command = partial(self.costFunUpdate,data))
+        self.costFunMenu.configure(state = tk.DISABLED)
+
+
+
+        # poly order
+        self.polyOrdVal = tk.IntVar()
+        self.polyOrdVal.set(1)
+        polyOrdTextLabel = ttk.Label(self,text = "Polynomial Order:")
+        polyOrdLabel = ttk.Label(self,textvariable = self.polyOrdVal)
+        self.polyOrdSlider = ttk.Scale(self,from_ = 1,to = 15,orient = tk.HORIZONTAL,command = partial(self.polyUpdate,data))
+        self.polyOrdSlider.configure(state = tk.DISABLED)
+
+
+
+        # threshold
+        self.thrVal = tk.DoubleVar()
+        self.thrVal.set(0.1)
+        thrTextLabel = ttk.Label(self,text = "Threshold:")
+        thrLabel = ttk.Label(self,textvariable = self.thrVal)
+        self.thrSlider = ttk.Scale(self,from_ = 0.01,to = 0.1,orient = tk.HORIZONTAL,command = partial(self.thrUpdate,data))
+        self.thrSlider.configure(state = tk.DISABLED)
+
+
+
+        # cntVal
+        self.cntVal = tk.DoubleVar()
+        self.cntVal.set(0)
+        cntTextLabel = ttk.Label(self,text = "Counts Adjust:")
+        cntLabel = ttk.Label(self,textvariable = self.cntVal)
+        self.cntSlider = ttk.Scale(self,from_ = -70,to = 70,orient = tk.HORIZONTAL,command = partial(self.cntUpdate,data))
+        self.cntSlider.configure(state = tk.DISABLED)
+
+
+
+        # Sub Button
+        self.subButton = ttk.Button(self,text = "Subtract",command = partial(self.polySub,data,cleanData))
+        self.subButton.configure(state = tk.DISABLED)
+
+
+
+        # Back Button
+        self.backButton = ttk.Button(self,text = "Back",command = partial(self.goBack,data,cleanData))
+        self.backButton.configure(state = tk.DISABLED)
+
+
+
+        # Export Button
+        self.exportButton = ttk.Button(self,text = "Export",command = partial(self.exportData,cleanData))
+        self.exportButton.configure(state = tk.DISABLED)
+
+
+
+
+        # Gridding
+        for i in range(0,100):
+            self.rowconfigure(i, weight = 1)
+            self.columnconfigure(i, weight = 1)
+        ghostLabel.grid(row = 3,column = 9,columnspan = 2)
+        ghostLabel.configure(width = 18)
+        nSpectraTextLabel.grid(row = 4, column = 10, columnspan = 3,sticky = 'news')
+        nSpectraLabel.grid(row = 4, column = 11, columnspan = 3,sticky = 'news')
+
+        minIdxLabel.grid(row = 8, column = 10, columnspan = 1,sticky = 'news')
+        self.minIdxEntry.grid(row = 8, column = 11 ,sticky = 'ew')
+        maxIdxLabel.grid(row = 9, column = 10, columnspan = 1,sticky = 'news')
+        self.maxIdxEntry.grid(row = 9, column = 11 ,sticky = 'ew')
+
+        selectedIdxTextLabel.grid(row = 12, column = 10, columnspan = 1,sticky = 'news')
+        selectedIdxLabel.grid(row = 12,column = 11,columnspan = 1, sticky = 'news')
+        self.selectedIdxSlider.grid(row = 13,column = 10,columnspan = 4,sticky = 'ew')
+
+        costFunLabel.grid(row = 21,column = 10,columnspan = 4,sticky = 'ew')
+        self.costFunMenu.grid(row = 22,column = 10,columnspan = 4,sticky = 'ew')
+        self.costFunMenu.configure(width = 27)
+
+        polyOrdTextLabel.grid(row = 34, column = 10, columnspan = 1,sticky = 'news')
+        polyOrdLabel.grid(row = 34,column = 11,columnspan = 1, sticky = 'news')
+        self.polyOrdSlider.grid(row = 35,column = 10,columnspan = 4,sticky = 'ew')
+
+        thrTextLabel.grid(row = 47, column = 10, columnspan = 1,sticky = 'news')
+        thrLabel.grid(row = 47,column = 11,columnspan = 1, sticky = 'news')
+        self.thrSlider.grid(row = 48,column = 10,columnspan = 4,sticky = 'ew')
+
+        cntTextLabel.grid(row = 59, column = 10, columnspan = 1,sticky = 'news')
+        cntLabel.grid(row = 59,column = 11,columnspan = 1, sticky = 'news')
+        self.cntSlider.grid(row = 60,column = 10,columnspan = 4,sticky = 'ew')
+
+
+
+        self.subButton.grid(row = 76,column = 10,columnspan = 1,sticky = 'ew')
+        self.backButton.grid(row = 77,column = 10,columnspan = 1,sticky = 'ew')
+
+        self.exportButton.grid(row = 89,column = 10,columnspan = 1,sticky = 'ew')
+
+
+
+
+    # Check / validations
+    def validateMinIdx(self,val):
+        # valido se e' un numero
+        valid = val.isdigit()
+
+        if valid:
+            try:
+                max = self.maxIdxSpectra.get()
+            except:
+                max = 1
+            valid = int(val) < max
+
+        # rimozione 0 iniziale
+        if not val:
+            valid = True
+        return valid
+
+    def validateMaxIdx(self,data,val):
+        # valido se e' un numero
+        valid = val.isdigit()
+
+        if valid:
+            valid = int(val) < data.nSpectra
+
+        # rimozione 0 iniziale
+        if not val:
+            valid = True
+        return valid
+
+    def checkPlotInput(self,data,event):
+
+        #
+        try:
+            min = self.minIdxSpectra.get()
+        except:
+            min = 0
+
+        try:
+            max = self.maxIdxSpectra.get()
+        except:
+            max = 1
+
+        valid = min < max
+
+        if max - min < self.nsLimit:
+            self.selectedIdxSlider.configure(state = tk.NORMAL,from_ = min,to = max - 1)
+            self.costFunMenu.configure(state = tk.NORMAL)
+            self.polyOrdSlider.configure(state = tk.NORMAL)
+            self.thrSlider.configure(state = tk.NORMAL)
+            self.cntSlider.configure(state = tk.NORMAL)
+            self.subButton.configure(state = tk.NORMAL)
+            self.backButton.configure(state = tk.DISABLED)
+            self.exportButton.configure(state = tk.DISABLED)
+        else:
+            self.selectedIdxSlider.configure(state = tk.DISABLED)
+            self.costFunMenu.configure(state = tk.DISABLED)
+            self.polyOrdSlider.configure(state = tk.DISABLED)
+            self.thrSlider.configure(state = tk.DISABLED)
+            self.cntSlider.configure(state = tk.DISABLED)
+            self.subButton.configure(state = tk.DISABLED)
+            self.backButton.configure(state = tk.DISABLED)
+            self.exportButton.configure(state = tk.DISABLED)
+
+
+        #  if valid plot
+        if valid:
+            if max - min < self.nsLimit:
+                self.plotNSpectra(data,self.plotColor)
+            else:
+                self.plotNSpectra(data,None)
+            self.canvas.draw()
+        else:
+            tk.messagebox.showerror(title="Plot error",message="Inserisci dei valori di range validi")
+
+    # Upddate selected idx
+    def selUpdate(self,data,val):
+        idx = int(float(val))
+        self.selectedIdx.set(idx)
+        self.plotNSpectra(data,self.plotColor)
+        self.canvas.draw()
+
+    # Upddate cost function
+    def costFunUpdate(self,data,val):
+        self.costFunVal.set(val)
+        self.polyApx(data,self.cntVal.get())
+    # Update polynomial oreder
+    def polyUpdate(self,data,val):
+        idx = int(float(val))
+        self.polyOrdVal.set(idx)
+        self.polyApx(data,self.cntVal.get())
+    # Update threshold
+    def thrUpdate(self,data,val):
+        idx = float(val)
+        idx = round(idx,2)
+        self.thrVal.set(idx)
+        self.polyApx(data,self.cntVal.get())
+    # Update counts adjust
+    def cntUpdate(self,data,val):
+        idx = float(val)
+        idx = round(idx,2)
+        self.cntVal.set(idx)
+        self.polyApx(data,self.cntVal.get())
+
+
+    #  Approssimazione polinomiale con shift
+    def polyApx(self,data,shift):
+        if data.nSpectra == 1:
+            polyApprox = PolyApprox(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get())
+        else:
+            polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
+        polyApprox.approx()
+        polyApprox.spectraApprox = polyApprox.spectraApprox + shift
+        self.polyPlot(data,polyApprox)
+
+
+    # Subtract poly
+    def polySub(self,data,cleanData):
+        # Creazione oggetto clean data
+        cleanData.pointsPerSpectrum = data.pointsPerSpectrum
+        cleanData.ramanShift = data.ramanShift
+        # 1 or more spectra
+        if data.nSpectra == 1:
+            polyApprox = PolyApprox(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get())
+        else:
+            polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
+        polyApprox.approx()
+        cleanData.spectraData = data.spectraData[self.selectedIdx.get()] - polyApprox.spectraApprox
+        self.easyPlot(cleanData,self.plotColor)
+
+
+        # Disable / Enable
+        self.selectedIdxSlider.configure(state = tk.DISABLED)
+        self.costFunMenu.configure(state = tk.DISABLED)
+        self.polyOrdSlider.configure(state = tk.DISABLED)
+        self.thrSlider.configure(state = tk.DISABLED)
+        self.cntSlider.configure(state = tk.DISABLED)
+        self.subButton.configure(state = tk.DISABLED)
+        self.backButton.configure(state = tk.NORMAL)
+        self.exportButton.configure(state = tk.NORMAL)
+        self.minIdxEntry.configure(state = tk.DISABLED)
+        self.maxIdxEntry.configure(state = tk.DISABLED)
+
+
+
+    # Plot approssimazione polinomiale + data
+    def polyPlot(self,data,polyApprox):
+        self.plotNSpectra(data,self.plotColor)
+        self.ax.plot(data.ramanShift,polyApprox.spectraApprox,self.plotApproxColor)
+        self.canvas.draw()
+
+    # EasyPlot
+    def easyPlot(self,data,color):
+        self.ax.cla()
+        self.ax.tick_params(axis='both', colors='white',labelsize = 12)
+        self.ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
+        self.ax.set_ylabel("Counts",fontsize = 15,color = "white")
+
+        if color is None:
+            self.ax.plot(data.ramanShift,data.spectraData)
+        else:
+            self.ax.plot(data.ramanShift,data.spectraData,color)
+
+        l = data.ramanShift[0]
+        r = data.ramanShift[-1]
+        self.ax.set_xlim(l,r)
+        self.canvas.draw()
+
+    # Plot multispettrale
+    def plotNSpectra(self,data,color):
+
+        # se non ci sono dati da plottare ritorna true
+        if data.ramanShift is None:
+            return True
+
+        self.ax.cla()
+        self.ax.tick_params(axis='both', colors='white',labelsize = 12)
+        self.ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
+        self.ax.set_ylabel("Counts",fontsize = 15,color = "white")
+
+        # Se non ci sono valori asseganti al range usa quelli di default
+        try:
+            rangeMin = self.minIdxSpectra.get()
+        except:
+            rangeMin = 0
+        try:
+            rangeMax = self.maxIdxSpectra.get()
+        except:
+            rangeMax = 1
+
+        # plot degli spettri nel range indicato
+        if not self.ax.lines:
+            for i in range(rangeMin,rangeMax):
+                try:
+                    # Se sono in fase di selezione o visualizzazione
+                    if color is None:
+                        self.ax.plot(data.ramanShift,data.spectraData[i])
+                    else:
+                        # Se lo spettro da plottare e' quello selezionato, plotta in colore selezione
+                        if i == self.selectedIdx.get():
+                            self.ax.plot(data.ramanShift,data.spectraData[i],self.plotSelectedColor)
+                        else:
+                            self.ax.plot(data.ramanShift,data.spectraData[i],color)
+                except:
+                    return True
+
+                # setting plot limits
+                l = data.ramanShift[0]
+                r = data.ramanShift[-1]
+                self.ax.set_xlim(l,r)
+
+
+    # Back
+    def goBack(self,data,cleanData):
+        # Reset cleanData
+        cleanData.spectraData = None
+        cleanData.nSpectra = None
+        # Plot spettri senza polysub
+        if data.nSpectra == 1:
+            self.easyPlot(data,self.plotColor)
+        else:
+            self.plotNSpectra(data,self.plotColor)
+            self.canvas.draw()
+        # Reset controlli
+        self.selectedIdxSlider.configure(state = tk.NORMAL)
+        self.costFunMenu.configure(state = tk.NORMAL)
+        self.polyOrdSlider.configure(state = tk.NORMAL)
+        self.thrSlider.configure(state = tk.NORMAL)
+        self.cntSlider.configure(state = tk.NORMAL)
+        self.subButton.configure(state = tk.NORMAL)
+        self.backButton.configure(state = tk.DISABLED)
+        self.exportButton.configure(state = tk.DISABLED)
+        self.minIdxEntry.configure(state = tk.NORMAL)
+        self.maxIdxEntry.configure(state = tk.NORMAL)
+
+    # Export
+    def exportData(self,cleanData):
+        try:
+            f = tk.filedialog.asksaveasfile(mode = "w",
+                parent = self.parent,
+                defaultextension=".txt",
+                initialdir = self.dataPath,title = 'Save file',
+                filetypes = [('text files','*.txt')])
+            f.write("Raman Shift [1/cm]    Counts\n")
+            np.savetxt(f,np.c_[cleanData.ramanShift,cleanData.spectraData],fmt="%f")
+
+            tk.messagebox.showinfo("Salvataggio completato","File salvato correttamente")
+        except:
+            print("IO error")
+
+###############################################################################
+
+# Run backCor
+
+app = BackCor(None)
+app.mainloop()
