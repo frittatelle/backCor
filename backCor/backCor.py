@@ -14,13 +14,13 @@ from tkinter import ttk
 from ttkthemes import ThemedStyle
 
 #dataReader
-from dataReader import DataReader
+from dataReader.dataReader import DataReader
 
 # Data
-from dataBlock import Data
+from dataBlock.dataBlock import Data
 
 # polyApprox
-from polyApprox import PolyApprox,PolyApproxIdx
+from polyApprox.polyApprox import PolyApprox,PolyApproxIdx
 
 #numpy
 import numpy as np
