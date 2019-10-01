@@ -118,7 +118,7 @@ class MenuBar(tk.Menu):
 
         # File
         fileMenu = tk.Menu(self,tearoff = 0)
-        fileMenu.add_command(label = "Open",command = partial(self.openFile,data))
+        fileMenu.add_command(label = "Open",command = partial(self.openFile,data,self.parent))
         fileMenu.add_separator()
         fileMenu.add_command(label = "Settings")
         fileMenu.add_separator()
@@ -130,23 +130,36 @@ class MenuBar(tk.Menu):
         self.add_cascade(label="Edit", menu = editMenu)
 
 
-    def openFile(self,data):
+    def openFile(self,data,parent):
 
         # Browse file dialog
+
         f = self.browseFile()
 
         # Lettura del file
-        dataR = DataReader(fileName = f)
-        data.pointsPerSpectrum = dataR.pointsPerSpectrum
-        data.ramanShift = dataR.ramanShift
-        data.spectraData = dataR.spectraData
-        if len(dataR.spectraData) == dataR.pointsPerSpectrum:
-            data.nSpectra = 1
-        else:
-            data.nSpectra = len(dataR.spectraData)
+        try:
+            dataR = DataReader(fileName = f)
 
-        # Load data
-        self.loadData(data)
+            if dataR is None:
+                tk.messagebox.showerror(title="Reading error",message="Il file non e' stato letto correttamente")
+            else:
+                data.pointsPerSpectrum = dataR.pointsPerSpectrum
+                data.ramanShift = dataR.ramanShift
+                data.spectraData = dataR.spectraData
+                if len(dataR.spectraData) == dataR.pointsPerSpectrum:
+                    data.nSpectra = 1
+                else:
+                    data.nSpectra = len(dataR.spectraData)
+
+                # Load data
+                self.loadData(data,f)
+
+        except:
+            pass
+
+
+
+
 
     def browseFile(self):
         f = tk.filedialog.askopenfilename(
@@ -163,7 +176,7 @@ class MenuBar(tk.Menu):
         #     )
         return f
 
-    def loadData(self,data):
+    def loadData(self,data,f):
         # pframe
         ax = self.parent.pFrame.ax
         fig = self.parent.pFrame.fig
@@ -189,74 +202,81 @@ class MenuBar(tk.Menu):
         ramanShift = data.ramanShift
         spectraData = data.spectraData
 
-
+        res = False
         # message box chiudi finestra si/no
         # se non ci sono plot plotta, se ci sono plot chiedi
         if ax.lines:
             res = tk.messagebox.askyesno("Chiudere la finestra?","Sei sicuro di voler chiudere questa finestra?")
+
             if res:
                 ax.cla()
                 ax.tick_params(axis='both', colors='white',labelsize = 12)
                 ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
                 ax.set_ylabel("Counts",fontsize = 15,color = "white")
+            else:
+                pass
+
+        if not ax.lines or res:
+
+            # Setting titolo
+            fileName = os.path.basename(f)
+            self.parent.title("backCor - " + fileName)
+
+            # Check sul numero degli spettri (caso spettro singolo)
+            spectraCheck = data.nSpectra
+            if spectraCheck == 1:
+                ax.plot(ramanShift,spectraData)
+                # setta a 1 il numero max di spettri
+                maxIdxSpectra.set(1)
+                # setta a 1 il numero di spettro
+                self.parent.cFrame.nSpectra.set(1)
+                #disbilita le entry
+                minIdxEntry.configure(state = tk.DISABLED)
+                maxIdxEntry.configure(state = tk.DISABLED)
+                # buttons
+                subButton.configure(state = tk.NORMAL)
+                backButton.configure(state = tk.DISABLED)
+                exportButton.configure(state = tk.DISABLED)
+                # abilita cost function
+                costFunMenu.configure(state = tk.NORMAL)
+                #  abilita polyOrd
+                polyOrdSlider.configure(state = tk.NORMAL)
+                # abilita threshold
+                thrSlider.configure(state = tk.NORMAL)
+                # abilita counts adjust
+                cntSlider.configure(state = tk.NORMAL)
+
+            else:
+                #setta la label del numero di spettri
+                nSpectra.set(data.nSpectra)
+                # abilita le entry
+                minIdxEntry.configure(state = tk.NORMAL)
+                maxIdxEntry.configure(state = tk.NORMAL)
+                # buttons
+                subButton.configure(state = tk.DISABLED)
+                backButton.configure(state = tk.DISABLED)
+                exportButton.configure(state = tk.DISABLED)
+                # abilita cost function
+                costFunMenu.configure(state = tk.DISABLED)
+                #  abilita polyOrd
+                polyOrdSlider.configure(state = tk.DISABLED)
+                # abilita threshold
+                thrSlider.configure(state = tk.DISABLED)
+
+                # setta i default delle entry
+                minIdxSpectra.set(0)
+                maxIdxSpectra.set(data.nSpectra - 1)
+                #plot spettri
+                for spectrum in spectraData:
+                    ax.plot(ramanShift,spectrum)
 
 
-        # Check sul numero degli spettri (caso spettro singolo)
-        spectraCheck = data.nSpectra
-        if spectraCheck == 1:
-            ax.plot(ramanShift,spectraData)
-            # setta a 1 il numero max di spettri
-            maxIdxSpectra.set(1)
-            # setta a 1 il numero di spettro
-            self.parent.cFrame.nSpectra.set(1)
-            #disbilita le entry
-            minIdxEntry.configure(state = tk.DISABLED)
-            maxIdxEntry.configure(state = tk.DISABLED)
-            # buttons
-            subButton.configure(state = tk.NORMAL)
-            backButton.configure(state = tk.DISABLED)
-            exportButton.configure(state = tk.DISABLED)
-            # abilita cost function
-            costFunMenu.configure(state = tk.NORMAL)
-            #  abilita polyOrd
-            polyOrdSlider.configure(state = tk.NORMAL)
-            # abilita threshold
-            thrSlider.configure(state = tk.NORMAL)
-            # abilita counts adjust
-            cntSlider.configure(state = tk.NORMAL)
+            # setting plot limits
+            l = ramanShift[0]
+            r = ramanShift[-1]
+            ax.set_xlim(l,r)
 
-        else:
-            #setta la label del numero di spettri
-            nSpectra.set(data.nSpectra)
-            # abilita le entry
-            minIdxEntry.configure(state = tk.NORMAL)
-            maxIdxEntry.configure(state = tk.NORMAL)
-            # buttons
-            subButton.configure(state = tk.DISABLED)
-            backButton.configure(state = tk.DISABLED)
-            exportButton.configure(state = tk.DISABLED)
-            # abilita cost function
-            costFunMenu.configure(state = tk.DISABLED)
-            #  abilita polyOrd
-            polyOrdSlider.configure(state = tk.DISABLED)
-            # abilita threshold
-            thrSlider.configure(state = tk.DISABLED)
-
-            # setta i default delle entry
-            minIdxSpectra.set(0)
-            maxIdxSpectra.set(data.nSpectra - 1)
-            #plot spettri
-            for spectrum in spectraData:
-                ax.plot(ramanShift,spectrum)
-
-
-
-        # setting plot limits
-        l = ramanShift[0]
-        r = ramanShift[-1]
-        ax.set_xlim(l,r)
-
-        canvas.draw()
+            canvas.draw()
 
 
 ###############################################################################
@@ -278,7 +298,7 @@ class PlotFrame(ttk.Frame):
         ax = fig.add_subplot(111)
         # ax.fmt_xdata = lambda x:'{:.4f}'.format(x)
         # ax.fmt_ydata = lambda y:'{:.4f}'.format(y)
-        ax.format_coord = lambda x, y: ''
+        # ax.format_coord = lambda x, y: ''
         ax.tick_params(axis='both', colors='white',labelsize = 12)
         ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
         ax.set_ylabel("Counts",fontsize = 15,color = "white")
@@ -293,8 +313,6 @@ class PlotFrame(ttk.Frame):
         # toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
         # toolbar.update()
 
-        #custom navigation toolbar 2Tk
-        # TODO: Custom navigation tool
 
         self.canvas = canvas
         self.ax = ax
@@ -539,8 +557,9 @@ class ControlsFrame(ttk.Frame):
     def selUpdate(self,data,val):
         idx = int(float(val))
         self.selectedIdx.set(idx)
-        self.plotNSpectra(data,self.plotColor)
-        self.canvas.draw()
+        # self.plotNSpectra(data,self.plotColor)
+        # self.canvas.draw()
+        self.polyApx(data,self.cntVal.get())
 
     # Upddate cost function
     def costFunUpdate(self,data,val):
@@ -589,6 +608,7 @@ class ControlsFrame(ttk.Frame):
         polyApprox.approx()
         cleanData.spectraData = data.spectraData[self.selectedIdx.get()] - polyApprox.spectraApprox
         self.easyPlot(cleanData,self.plotColor)
+        self.canvas.draw()
 
 
         # Disable / Enable
@@ -607,7 +627,10 @@ class ControlsFrame(ttk.Frame):
 
     # Plot approssimazione polinomiale + data
     def polyPlot(self,data,polyApprox):
-        self.plotNSpectra(data,self.plotColor)
+        if data.nSpectra == 1:
+            self.easyPlot(data,self.plotColor)
+        else:
+            self.plotNSpectra(data,self.plotColor)
         self.ax.plot(data.ramanShift,polyApprox.spectraApprox,self.plotApproxColor)
         self.canvas.draw()
 
@@ -626,7 +649,6 @@ class ControlsFrame(ttk.Frame):
         l = data.ramanShift[0]
         r = data.ramanShift[-1]
         self.ax.set_xlim(l,r)
-        self.canvas.draw()
 
     # Plot multispettrale
     def plotNSpectra(self,data,color):
@@ -677,12 +699,10 @@ class ControlsFrame(ttk.Frame):
         # Reset cleanData
         cleanData.spectraData = None
         cleanData.nSpectra = None
-        # Plot spettri senza polysub
-        if data.nSpectra == 1:
-            self.easyPlot(data,self.plotColor)
-        else:
-            self.plotNSpectra(data,self.plotColor)
-            self.canvas.draw()
+
+        # Approssima e plotta (back)
+        self.polyApx(data,self.cntVal.get())
+
         # Reset controlli
         self.selectedIdxSlider.configure(state = tk.NORMAL)
         self.costFunMenu.configure(state = tk.NORMAL)
@@ -708,7 +728,7 @@ class ControlsFrame(ttk.Frame):
 
             tk.messagebox.showinfo("Salvataggio completato","File salvato correttamente")
         except:
-            print("IO error")
+            pass
 
 ###############################################################################
 
