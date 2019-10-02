@@ -41,12 +41,12 @@ class BackCor(tk.Tk):
 
     def __init__(self,parent):
         tk.Tk.__init__(self,parent)
+        self.parent = parent
 
         # Settings
         settings = SettingsReader()
         self.setStyle(settings)         # Style
-        self.setWindowInfo()    # Window
-        self.parent = parent
+        self.setWindowInfo(settings)    # Window
 
         # Data container
         data = Data(None,None,None)
@@ -75,7 +75,10 @@ class BackCor(tk.Tk):
 
 
     # Setting finestra
-    def setWindowInfo(self):
+    def setWindowInfo(self,settings):
+        # Icon
+        iconPath = os.path.join(settings.basePath,"img\\ico\\backCor_BB.ico")
+        self.iconbitmap(iconPath)
         # Dimensioni finestra
         width = self.winfo_screenwidth()
         height = self.winfo_screenheight()
