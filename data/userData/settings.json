@@ -1,17 +1,17 @@
 {
   "settings":{
     "controls":{
-        "nsLimit": 5,
+        "nsLimit": 11,
         "polyOrd":{
-          "min": 3,
-          "max": 9
+          "min": 8,
+          "max": 18
         },
         "thrVal":{
           "min": 0.05,
           "max": 0.1
         },
         "cntsAdj":{
-          "min": -90,
+          "min": -200,
           "max": 0
         }
     },
