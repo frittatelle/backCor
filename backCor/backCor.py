@@ -22,6 +22,9 @@ from dataBlock.dataBlock import Data
 # polyApprox
 from polyApprox.polyApprox import PolyApprox,PolyApproxIdx
 
+# settingsReader
+from settingsReader.settingsReader import SettingsReader
+
 #numpy
 import numpy as np
 
@@ -32,16 +35,6 @@ import os as os
 import re
 
 
-# Style
-# atom/one/dark/background = #282c34
-# atom/one/dark/currentline = #0A99bbff
-# atom/one/dark/currentcell = #00000000
-# atom/one/dark/occurrence = #434957
-# atom/one/dark/ctrlclick = #56b6c2
-# atom/one/dark/sideareas = #21252b
-# atom/one/dark/matched_p = #434957
-# atom/one/dark/unmatched_p = #4Dff0000
-
 
 ###############################################################################
 
@@ -51,9 +44,9 @@ class BackCor(tk.Tk):
     def __init__(self,parent):
         tk.Tk.__init__(self,parent)
 
-        # Constants
-        self.home = os.path.expanduser('~')
-        self.setStyle()         # Style
+        # Settings
+        settings = SettingsReader()
+        self.setStyle(settings)         # Style
         self.setWindowInfo()    # Window
         self.parent = parent
 
@@ -69,21 +62,19 @@ class BackCor(tk.Tk):
         self.pFrame = pFrame
 
         # ControlsFrame
-        cFrame = ControlsFrame(self,data,cleanData)
+        cFrame = ControlsFrame(self,data,cleanData,settings)
         self.cFrame = cFrame
 
 
 
     # Set style
-    def setStyle(self):
+    def setStyle(self,settings):
         s = ThemedStyle()
-        s.configure('TFrame',background = '#21252b')
-        s.configure('TNotebook',background = '#282c34',padding = 30,tabmargins = 0)
-        s.configure('controls.TFrame',background = '#282c34')
-        s.configure('TLabel',background = '#282c34',foreground = 'white',font = ('Poppins',11))
-        s.configure('TButton',font = ('Poppins',11))
+        s.configure('TFrame',background = settings.tFrameBg)
+        s.configure('controls.TFrame',background = settings.controlsTFrameBg)
+        s.configure('TLabel',background = settings.tLabelBg,foreground = settings.tLabelFg,font = (settings.fontFamily,settings.fontSize))
+        s.configure('TButton',font = (settings.fontFamily,settings.fontSize))
 
-        plotFont = {'color': 'white','size': 12}
 
     # Setting finestra
     def setWindowInfo(self):
@@ -96,8 +87,7 @@ class BackCor(tk.Tk):
         self.minsize(int(width/2),int(height/2))
         #Title
         self.title("backCor")
-        #Background color
-        # self.configure(background = "#282C34")
+
 
         for i in range(0,100):
             self.rowconfigure(i, weight = 1)
@@ -170,7 +160,7 @@ class MenuBar(tk.Menu):
             )
         # f = tk.filedialog.askopenfilename(
         #     parent = self.parent,
-        #     initialdir = self.parent.home,title = 'Choose file',
+        #     initialdir = settings.favFolderPath,title = 'Choose file',
         #     filetypes = [('wdf files','.wdf'),
         #                  ('text files','.txt')]
         #     )
@@ -195,6 +185,7 @@ class MenuBar(tk.Menu):
         subButton = self.parent.cFrame.subButton
         backButton = self.parent.cFrame.backButton
         exportButton = self.parent.cFrame.exportButton
+        selectedIdxSlider = self.parent.cFrame.selectedIdxSlider
 
 
         # data
@@ -252,16 +243,22 @@ class MenuBar(tk.Menu):
                 # abilita le entry
                 minIdxEntry.configure(state = tk.NORMAL)
                 maxIdxEntry.configure(state = tk.NORMAL)
-                # buttons
+                # disabilita buttons
                 subButton.configure(state = tk.DISABLED)
                 backButton.configure(state = tk.DISABLED)
                 exportButton.configure(state = tk.DISABLED)
-                # abilita cost function
+                # disabilita cost function
                 costFunMenu.configure(state = tk.DISABLED)
-                #  abilita polyOrd
+                #  disabilita polyOrd
                 polyOrdSlider.configure(state = tk.DISABLED)
-                # abilita threshold
+                # disabilita threshold
                 thrSlider.configure(state = tk.DISABLED)
+                # disabilita idxsel
+                selectedIdxSlider.configure(state = tk.DISABLED)
+                # disabilita cntSlider
+                cntSlider.configure(state = tk.DISABLED)
+
+
 
                 # setta i default delle entry
                 minIdxSpectra.set(0)
@@ -324,7 +321,7 @@ class PlotFrame(ttk.Frame):
 #ControlsFrame
 class ControlsFrame(ttk.Frame):
 
-    def __init__(self,parent,data,cleanData):
+    def __init__(self,parent,data,cleanData,settings):
         ttk.Frame.__init__(self,parent)
         self.parent = parent
 
@@ -333,11 +330,11 @@ class ControlsFrame(ttk.Frame):
         self.ax = self.parent.pFrame.ax
         self.canvas = self.parent.pFrame.canvas
 
-        self.nsLimit = 11
-        self.plotColor = '#4169e1'
-        self.plotSelectedColor = '#ffc445'
-        self.plotApproxColor = '#ff6745'
-        self.dataPath = 'C:/Users/Luca/Desktop/Lab/Analisi morfologica/B/'
+        self.nsLimit = settings.nsLimit
+        self.plotColor = settings.plotColor
+        self.plotSelectedColor = settings.plotSelectedColor
+        self.plotApproxColor = settings.plotApproxColor
+        self.exportPath = settings.exportPath
 
 
 
@@ -388,20 +385,20 @@ class ControlsFrame(ttk.Frame):
 
         # poly order
         self.polyOrdVal = tk.IntVar()
-        self.polyOrdVal.set(1)
+        self.polyOrdVal.set(settings.minPolyOrd)
         polyOrdTextLabel = ttk.Label(self,text = "Polynomial Order:")
         polyOrdLabel = ttk.Label(self,textvariable = self.polyOrdVal)
-        self.polyOrdSlider = ttk.Scale(self,from_ = 1,to = 15,orient = tk.HORIZONTAL,command = partial(self.polyUpdate,data))
+        self.polyOrdSlider = ttk.Scale(self,from_ = settings.minPolyOrd,to = settings.maxPolyOrd,orient = tk.HORIZONTAL,command = partial(self.polyUpdate,data))
         self.polyOrdSlider.configure(state = tk.DISABLED)
 
 
 
         # threshold
         self.thrVal = tk.DoubleVar()
-        self.thrVal.set(0.1)
+        self.thrVal.set(settings.minThrVal)
         thrTextLabel = ttk.Label(self,text = "Threshold:")
         thrLabel = ttk.Label(self,textvariable = self.thrVal)
-        self.thrSlider = ttk.Scale(self,from_ = 0.01,to = 0.1,orient = tk.HORIZONTAL,command = partial(self.thrUpdate,data))
+        self.thrSlider = ttk.Scale(self,from_ = settings.minThrVal,to = settings.maxThrVal,orient = tk.HORIZONTAL,command = partial(self.thrUpdate,data))
         self.thrSlider.configure(state = tk.DISABLED)
 
 
@@ -411,7 +408,7 @@ class ControlsFrame(ttk.Frame):
         self.cntVal.set(0)
         cntTextLabel = ttk.Label(self,text = "Counts Adjust:")
         cntLabel = ttk.Label(self,textvariable = self.cntVal)
-        self.cntSlider = ttk.Scale(self,from_ = -70,to = 70,orient = tk.HORIZONTAL,command = partial(self.cntUpdate,data))
+        self.cntSlider = ttk.Scale(self,from_ = settings.minCntsAdj,to = settings.maxCntsAdj,orient = tk.HORIZONTAL,command = partial(self.cntUpdate,data))
         self.cntSlider.configure(state = tk.DISABLED)
 
 
@@ -553,6 +550,7 @@ class ControlsFrame(ttk.Frame):
         else:
             tk.messagebox.showerror(title="Plot error",message="Inserisci dei valori di range validi")
 
+
     # Upddate selected idx
     def selUpdate(self,data,val):
         idx = int(float(val))
@@ -560,7 +558,6 @@ class ControlsFrame(ttk.Frame):
         # self.plotNSpectra(data,self.plotColor)
         # self.canvas.draw()
         self.polyApx(data,self.cntVal.get())
-
     # Upddate cost function
     def costFunUpdate(self,data,val):
         self.costFunVal.set(val)
@@ -603,10 +600,13 @@ class ControlsFrame(ttk.Frame):
         # 1 or more spectra
         if data.nSpectra == 1:
             polyApprox = PolyApprox(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get())
+            polyApprox.approx()
+            cleanData.spectraData = data.spectraData- polyApprox.spectraApprox
         else:
             polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
-        polyApprox.approx()
-        cleanData.spectraData = data.spectraData[self.selectedIdx.get()] - polyApprox.spectraApprox
+            polyApprox.approx()
+            cleanData.spectraData = data.spectraData[self.selectedIdx.get()] - polyApprox.spectraApprox
+
         self.easyPlot(cleanData,self.plotColor)
         self.canvas.draw()
 
@@ -721,7 +721,7 @@ class ControlsFrame(ttk.Frame):
             f = tk.filedialog.asksaveasfile(mode = "w",
                 parent = self.parent,
                 defaultextension=".txt",
-                initialdir = self.dataPath,title = 'Save file',
+                initialdir = self.exportPath,title = 'Save file',
                 filetypes = [('text files','*.txt')])
             f.write("Raman Shift [1/cm]    Counts\n")
             np.savetxt(f,np.c_[cleanData.ramanShift,cleanData.spectraData],fmt="%f")
