@@ -6,6 +6,7 @@ class SettingsReader():
     def __init__(self):
 
         basePath = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        self.basePath = basePath
         settingsFilePath = os.path.join(basePath,"data\\userData\\settings.json")
 
         try:
