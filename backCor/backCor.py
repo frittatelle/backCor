@@ -53,7 +53,7 @@ class BackCor(tk.Tk):
         cleanData = Data(None,None,None)
 
         # MenuBar
-        menuBar = MenuBar(self,data)
+        menuBar = MenuBar(self,data,settings)
 
         # PlotFrame
         pFrame = PlotFrame(self)
@@ -101,7 +101,7 @@ class BackCor(tk.Tk):
 
 # MenuBar
 class MenuBar(tk.Menu):
-    def __init__(self,parent,data):
+    def __init__(self,parent,data,settings):
         tk.Menu.__init__(self,parent)
         self.parent = parent
         # Setting menubar as window menu
@@ -109,7 +109,7 @@ class MenuBar(tk.Menu):
 
         # File
         fileMenu = tk.Menu(self,tearoff = 0)
-        fileMenu.add_command(label = "Open",command = partial(self.openFile,data,self.parent))
+        fileMenu.add_command(label = "Open",command = partial(self.openFile,data,self.parent,settings))
         fileMenu.add_separator()
         fileMenu.add_command(label = "Settings")
         fileMenu.add_separator()
@@ -121,11 +121,11 @@ class MenuBar(tk.Menu):
         self.add_cascade(label="Edit", menu = editMenu)
 
 
-    def openFile(self,data,parent):
+    def openFile(self,data,parent,settings):
 
         # Browse file dialog
 
-        f = self.browseFile()
+        f = self.browseFile(settings)
 
         # Lettura del file
         try:
@@ -143,7 +143,7 @@ class MenuBar(tk.Menu):
                     data.nSpectra = len(dataR.spectraData)
 
                 # Load data
-                self.loadData(data,f)
+                self.loadData(data,f,settings)
 
         except:
             pass
@@ -152,22 +152,16 @@ class MenuBar(tk.Menu):
 
 
 
-    def browseFile(self):
+    def browseFile(self,settings):
         f = tk.filedialog.askopenfilename(
             parent = self.parent,
-            initialdir = 'C:/Users/Luca/Desktop/Lab/Analisi morfologica/B/',title = 'Choose file',
+            initialdir = settings.favFolderPath,title = 'Choose file',
             filetypes = [('wdf files','.wdf'),
                          ('text files','.txt')]
             )
-        # f = tk.filedialog.askopenfilename(
-        #     parent = self.parent,
-        #     initialdir = settings.favFolderPath,title = 'Choose file',
-        #     filetypes = [('wdf files','.wdf'),
-        #                  ('text files','.txt')]
-        #     )
         return f
 
-    def loadData(self,data,f):
+    def loadData(self,data,f,settings):
         # pframe
         ax = self.parent.pFrame.ax
         fig = self.parent.pFrame.fig
@@ -217,7 +211,7 @@ class MenuBar(tk.Menu):
             # Check sul numero degli spettri (caso spettro singolo)
             spectraCheck = data.nSpectra
             if spectraCheck == 1:
-                ax.plot(ramanShift,spectraData)
+                ax.plot(ramanShift,spectraData,settings.plotColor)
                 # setta a 1 il numero max di spettri
                 maxIdxSpectra.set(1)
                 # setta a 1 il numero di spettro
@@ -713,8 +707,12 @@ class ControlsFrame(ttk.Frame):
         self.subButton.configure(state = tk.NORMAL)
         self.backButton.configure(state = tk.DISABLED)
         self.exportButton.configure(state = tk.DISABLED)
-        self.minIdxEntry.configure(state = tk.NORMAL)
-        self.maxIdxEntry.configure(state = tk.NORMAL)
+        if data.nSpectra == 1:
+            self.minIdxEntry.configure(state = tk.DISABLED)
+            self.maxIdxEntry.configure(state = tk.DISABLED)
+        else:
+            self.minIdxEntry.configure(state = tk.NORMAL)
+            self.maxIdxEntry.configure(state = tk.NORMAL)
 
     # Export
     def exportData(self,cleanData):
