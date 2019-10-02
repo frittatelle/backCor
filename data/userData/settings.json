@@ -1,0 +1,44 @@
+{
+  "settings":{
+    "controls":{
+        "nsLimit": 5,
+        "polyOrd":{
+          "min": 3,
+          "max": 9
+        },
+        "thrVal":{
+          "min": 0.05,
+          "max": 0.1
+        },
+        "cntsAdj":{
+          "min": -90,
+          "max": 0
+        }
+    },
+
+    "style":{
+      "plot":{
+        "plotColor": "#4169e1",
+        "plotSelectedColor": "#ffc445",
+        "plotApproxColor": "#ff6745"
+      },
+      "font":{
+        "fontFamily": "Poppins",
+        "fontSize":11,
+        "fontColor":"white"
+      },
+      "appearance":{
+        "tFrame":{
+          "bg": "#21252b"
+        },
+        "controlsTFrame":{
+          "bg": "#282c34"
+        },
+        "tLabel":{
+          "bg": "#282c34",
+          "fg": "white"
+        }
+      }
+    }
+  }
+}
