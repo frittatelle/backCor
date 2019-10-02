@@ -6,12 +6,24 @@ class DataReader():
 
     def __init__(self, fileName):
 
-        # Wdf reader
-        wdfr = wdfReader.wdfReader(file_name = fileName)
+        if fileName.endswith(".wdf"):
+            # Wdf reader
+            wdfr = wdfReader.wdfReader(file_name = fileName)
+            if wdfr is not None:
+                self.pointsPerSpectrum = wdfr.point_per_spectrum            # N campioni per spettro
+                self.spectraData = self.processSpectra(wdfr)
+                self.ramanShift = self.processramanShift(wdfr)
 
-        self.pointsPerSpectrum = wdfr.point_per_spectrum            # N campioni per spettro
-        self.spectraData = self.processSpectra(wdfr)
-        self.ramanShift = self.processramanShift(wdfr)
+        elif fileName.endswith(".txt"):
+            # Txt reader
+            txtr = np.loadtxt(fileName, dtype = "float",skiprows = 1, unpack=True)
+            if txtr is not None:
+                self.ramanShift = txtr[0]
+                self.spectraData = txtr[1:]
+                self.pointsPerSpectrum = len(txtr[0])
+
+        else:
+            return None        
 
     # Spectra
     def processSpectra(self,wdfr):
