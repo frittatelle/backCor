@@ -6,7 +6,11 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationTool
 from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
 
+# functools
 from functools import partial
+
+# webbrowser
+import webbrowser
 
 #tkinter
 import tkinter as tk
@@ -111,14 +115,20 @@ class MenuBar(tk.Menu):
         fileMenu = tk.Menu(self,tearoff = 0)
         fileMenu.add_command(label = "Open",command = partial(self.openFile,data,self.parent,settings))
         fileMenu.add_separator()
-        fileMenu.add_command(label = "Settings")
-        fileMenu.add_separator()
         fileMenu.add_command(label = "Exit",command = parent.destroy)
         self.add_cascade(label = "File", menu = fileMenu)
 
         # Edit
         editMenu = tk.Menu(self, tearoff = 0)
+        editMenu.add_command(label = "Settings",command = partial(self.openSettings,settings))
         self.add_cascade(label="Edit", menu = editMenu)
+
+
+    def openSettings(self,settings):
+        if os.path.isfile(settings.settingsFilePath):
+            webbrowser.open(settings.settingsFilePath)
+        else:
+            pass
 
 
     def openFile(self,data,parent,settings):
