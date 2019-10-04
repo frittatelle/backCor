@@ -124,11 +124,13 @@ class MenuBar(tk.Menu):
         self.add_cascade(label="Edit", menu = editMenu)
 
 
+
     def openSettings(self,settings):
         if os.path.isfile(settings.settingsFilePath):
             webbrowser.open(settings.settingsFilePath)
         else:
-            pass
+            tk.messagebox.showerror(title="Loading error",message="Settings file non trovato - (data/userData/settings.json)")
+
 
 
     def openFile(self,data,parent,settings):
