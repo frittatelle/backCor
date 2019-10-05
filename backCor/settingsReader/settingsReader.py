@@ -15,8 +15,8 @@ class SettingsReader():
                 data = json.load(f)
 
                 # Data paths
-                self.favFolderPath = os.getcwd()
-                self.exportPath = os.getcwd()
+                self.favFolderPath = self.basePath
+                self.exportPath = self.basePath
 
                 # Controls
                 self.nsLimit = data['settings']['controls']['nsLimit']
@@ -47,6 +47,7 @@ class SettingsReader():
                 for attr, value in self.__dict__.items():
                     if value is None:
                         counter += 1
+
                 if counter > 0 : self.setDefault()
 
 
@@ -58,8 +59,8 @@ class SettingsReader():
 
     def setDefault(self):
             # Paths
-            self.favFolderPath = os.getcwd()
-            self.exportPath = os.getcwd()
+            self.favFolderPath = self.basePath
+            self.exportPath = self.basePath
 
             # Default settings
             self.nsLimit = 11
