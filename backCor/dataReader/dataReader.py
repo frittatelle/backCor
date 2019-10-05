@@ -19,11 +19,15 @@ class DataReader():
             txtr = np.loadtxt(fileName, dtype = "float",skiprows = 1, unpack=True)
             if txtr is not None:
                 self.ramanShift = txtr[0]
-                self.spectraData = txtr[1:]
                 self.pointsPerSpectrum = len(txtr[0])
+                if len(txtr) == 2:
+                    self.spectraData = txtr[1]
+                else:
+                    self.spectraData = txtr[1:]
+
 
         else:
-            return None        
+            return None
 
     # Spectra
     def processSpectra(self,wdfr):
