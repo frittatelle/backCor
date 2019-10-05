@@ -243,6 +243,8 @@ class MenuBar(tk.Menu):
                 thrSlider.configure(state = tk.NORMAL)
                 # abilita counts adjust
                 cntSlider.configure(state = tk.NORMAL)
+                # disabilita selectedIdx
+                selectedIdxSlider.configure(state = tk.DISABLED)
 
             else:
                 #setta la label del numero di spettri
@@ -723,6 +725,7 @@ class ControlsFrame(ttk.Frame):
         if data.nSpectra == 1:
             self.minIdxEntry.configure(state = tk.DISABLED)
             self.maxIdxEntry.configure(state = tk.DISABLED)
+            self.selectedIdxSlider.configure(state = tk.DISABLED)
         else:
             self.minIdxEntry.configure(state = tk.NORMAL)
             self.maxIdxEntry.configure(state = tk.NORMAL)
