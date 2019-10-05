@@ -3,11 +3,11 @@
     "controls":{
         "nsLimit": 11,
         "polyOrd":{
-          "min": 8,
-          "max": 18
+          "min": 3,
+          "max": 15
         },
         "thrVal":{
-          "min": 0.05,
+          "min": 0.01,
           "max": 0.1
         },
         "cntsAdj":{
