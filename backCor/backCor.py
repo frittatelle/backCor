@@ -137,6 +137,7 @@ class MenuBar(tk.Menu):
     def openSettings(self,settings):
         if os.path.isfile(settings.settingsFilePath):
             webbrowser.open(settings.settingsFilePath)
+            tk.messagebox.showwarning(title="Warning",message="Riavvia backCor per rendere effettive le modifiche")
         else:
             tk.messagebox.showerror(title="Loading error",message="Settings file non trovato - (data/userData/settings.json)")
 
