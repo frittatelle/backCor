@@ -12,6 +12,8 @@ from functools import partial
 # webbrowser
 import webbrowser
 
+from winFonts.winFonts import loadfont
+
 #tkinter
 import tkinter as tk
 from tkinter import ttk
@@ -72,6 +74,13 @@ class BackCor(tk.Tk):
     # Set style
     def setStyle(self,settings):
         s = ThemedStyle()
+
+        # Loading custom font
+        # Se non trova Poppins/Custom font mette il default
+        if settings.fontFamily == "Poppins":
+            fontPath = os.path.join(settings.basePath,"fonts\\Poppins-Regular.ttf")
+            loadfont(fontPath,private = True)
+
         s.configure('TFrame',background = settings.tFrameBg)
         s.configure('controls.TFrame',background = settings.controlsTFrameBg)
         s.configure('TLabel',background = settings.tLabelBg,foreground = settings.tLabelFg,font = (settings.fontFamily,settings.fontSize))
