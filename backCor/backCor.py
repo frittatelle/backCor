@@ -310,9 +310,6 @@ class PlotFrame(ttk.Frame):
         fig.patch.set_facecolor('#21252b')
 
         ax = fig.add_subplot(111)
-        # ax.fmt_xdata = lambda x:'{:.4f}'.format(x)
-        # ax.fmt_ydata = lambda y:'{:.4f}'.format(y)
-        # ax.format_coord = lambda x, y: ''
         ax.tick_params(axis='both', colors='white',labelsize = 12)
         ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
         ax.set_ylabel("Counts",fontsize = 15,color = "white")
@@ -321,11 +318,6 @@ class PlotFrame(ttk.Frame):
         canvas = FigureCanvasTkAgg(fig, master = self)
         canvas.get_tk_widget().grid(row = 0, column = 0,sticky = 'news',padx = 40, pady = 40)
         canvas.draw()
-        # #
-        # toolbarFrame = ttk.Frame(parent)
-        # toolbarFrame.grid(row = 100, column = 0)
-        # toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
-        # toolbar.update()
 
 
         self.canvas = canvas
@@ -561,10 +553,10 @@ class ControlsFrame(ttk.Frame):
         #  if valid plot
         if valid:
             if max - min < self.nsLimit:
-                self.plotNSpectra(data,self.plotColor)
+                self.polyApx(data,self.cntVal.get())
             else:
                 self.plotNSpectra(data,None)
-            self.canvas.draw()
+                self.canvas.draw()
         else:
             tk.messagebox.showerror(title="Plot error",message="Inserisci dei valori di range validi")
 
