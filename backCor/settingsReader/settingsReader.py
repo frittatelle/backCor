@@ -48,8 +48,14 @@ class SettingsReader():
                     f = True
             # Controllo int valido
             elif type(value) is int:
-                if value > 0:
-                    f = True
+                # Int pos
+                if default >= 0 :
+                    if value >= 0:
+                        f = True
+                # Int neg
+                else:
+                    if value < 0:
+                        f = True
         return f
 
     def readJson(self,settingsFilePath):
@@ -116,3 +122,7 @@ class SettingsReader():
         self.controlsTFrameBg = "#282c34"
         self.tLabelBg = "#282c34"
         self.tLabelFg = "white"
+
+
+s = SettingsReader()
+s.printSettings()
