@@ -102,13 +102,13 @@ class SettingsReader():
         self.exportPath = self.basePath
 
         # Default settings
-        self.nsLimit = 11
+        self.nsLimit = 6
         self.minPolyOrd = 1
         self.maxPolyOrd = 15
         self.minThrVal = 0.01
         self.maxThrVal = 0.1
-        self.minCntsAdj = -70
-        self.maxCntsAdj = 70
+        self.minCntsAdj = -100
+        self.maxCntsAdj = 0
 
         # Style
         # -- Font
