@@ -122,7 +122,3 @@ class SettingsReader():
         self.controlsTFrameBg = "#282c34"
         self.tLabelBg = "#282c34"
         self.tLabelFg = "white"
-
-
-s = SettingsReader()
-s.printSettings()
