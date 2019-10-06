@@ -1,87 +1,118 @@
 import os as os
 import json
+from matplotlib.colors import is_color_like
 
 class SettingsReader():
 
     def __init__(self):
 
+        # Base path e Settings path
         basePath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         self.basePath = basePath
         settingsFilePath = os.path.join(basePath,"data\\userData\\settings.json")
         self.settingsFilePath = settingsFilePath
 
+        # Setting valori di default
+        self.setDefault()
+
+        # Lettura settings.json
+        j = self.readJson(settingsFilePath)
+
+        # Check e loading user settings
+        self.editSettings(j)
+
+
+
+    def printSettings(self):
+        for attr,val in self.__dict__.items():
+            print(attr,": ",val)
+
+    def editSettings(self,j):
+        for idx,attr in enumerate(self.__dict__.items()):
+            #  i primi 4 attributi sono i path
+            if idx > 3:
+                if self.checkVal(attr[1],j[idx-4]):
+                    setattr(self,attr[0],j[idx-4])
+
+    def checkVal(self,default,value):
+        f = False
+        # controllo sul tipo
+        if type(value) == type(default):
+            # Controllo colore valido
+            if type(value) is str:
+                if is_color_like(value):
+                    f = True
+            # Controllo Float valido
+            elif type(value) is float:
+                if 0.01 <= value <= 0.1:
+                    f = True
+            # Controllo int valido
+            elif type(value) is int:
+                if value > 0:
+                    f = True
+        return f
+
+    def readJson(self,settingsFilePath):
+        # Lettura seettings.json e aggiornamento settings se i valori sono validi
+        j = []
         try:
             with open(settingsFilePath) as f:
                 data = json.load(f)
 
-                # Data paths
-                self.favFolderPath = self.basePath
-                self.exportPath = self.basePath
-
                 # Controls
-                self.nsLimit = data['settings']['controls']['nsLimit']
-                self.minPolyOrd = data['settings']['controls']['polyOrd']['min']
-                self.maxPolyOrd = data['settings']['controls']['polyOrd']['max']
-                self.minThrVal = data['settings']['controls']['thrVal']['min']
-                self.maxThrVal = data['settings']['controls']['thrVal']['max']
-                self.minCntsAdj = data['settings']['controls']['cntsAdj']['min']
-                self.maxCntsAdj = data['settings']['controls']['cntsAdj']['max']
+                j.append(data['settings']['controls']['nsLimit'])
+                j.append(data['settings']['controls']['polyOrd']['min'])
+                j.append(data['settings']['controls']['polyOrd']['max'])
+                j.append(data['settings']['controls']['thrVal']['min'])
+                j.append(data['settings']['controls']['thrVal']['max'])
+                j.append(data['settings']['controls']['cntsAdj']['min'])
+                j.append(data['settings']['controls']['cntsAdj']['max'])
 
                 # Style
                 # -- Font
-                self.fontFamily = data['settings']['style']['font']['fontFamily']
-                self.fontSize = data['settings']['style']['font']['fontSize']
-                self.fontColor = data['settings']['style']['font']['fontColor']
+                j.append(data['settings']['style']['font']['fontFamily'])
+                j.append(data['settings']['style']['font']['fontSize'])
+                j.append(data['settings']['style']['font']['fontColor'])
                 # -- Plot
-                self.plotColor = data['settings']['style']['plot']['plotColor']
-                self.plotSelectedColor = data['settings']['style']['plot']['plotSelectedColor']
-                self.plotApproxColor = data['settings']['style']['plot']['plotApproxColor']
+                j.append(data['settings']['style']['plot']['plotColor'])
+                j.append(data['settings']['style']['plot']['plotSelectedColor'])
+                j.append(data['settings']['style']['plot']['plotApproxColor'])
                 # -- Appearance
-                self.tFrameBg = data['settings']['style']['appearance']['tFrame']['bg']
-                self.controlsTFrameBg = data['settings']['style']['appearance']['controlsTFrame']['bg']
-                self.tLabelBg = data['settings']['style']['appearance']['tLabel']['bg']
-                self.tLabelFg = data['settings']['style']['appearance']['tLabel']['fg']
+                j.append(data['settings']['style']['appearance']['tFrame']['bg'])
+                j.append(data['settings']['style']['appearance']['controlsTFrame']['bg'])
+                j.append(data['settings']['style']['appearance']['tLabel']['bg'])
+                j.append(data['settings']['style']['appearance']['tLabel']['fg'])
+        except:
+            pass
 
-                # Check se ogni impostazione ha un valore corretto
-                counter = 0
-                for attr, value in self.__dict__.items():
-                    if value is None:
-                        counter += 1
-
-                if counter > 0 : self.setDefault()
-
-
-
-        except :
-            self.setDefault()
-
-
+        return j
 
     def setDefault(self):
-            # Paths
-            self.favFolderPath = self.basePath
-            self.exportPath = self.basePath
 
-            # Default settings
-            self.nsLimit = 11
-            self.minPolyOrd = 1
-            self.maxPolyOrd = 15
-            self.minThrVal = 0.01
-            self.maxThrVal = 0.1
-            self.minCntsAdj = -70
-            self.maxCntsAdj = 70
+        # Paths
+        self.favFolderPath = self.basePath
+        self.exportPath = self.basePath
 
-            # Style
-            # -- Font
-            self.fontFamily = "Poppins"
-            self.fontSize = 11
-            self.fontColor = "white"
-            # -- Plot
-            self.plotColor = "#4169e1"
-            self.plotSelectedColor = "#ffc445"
-            self.plotApproxColor = "#ff6745"
-            # -- Appearance
-            self.tFrameBg = "#21252b"
-            self.controlsTFrameBg = "#282c34"
-            self.tLabelBg = "#282c34"
-            self.tLabelFg = "white"
+        # Default settings
+        self.nsLimit = 11
+        self.minPolyOrd = 1
+        self.maxPolyOrd = 15
+        self.minThrVal = 0.01
+        self.maxThrVal = 0.1
+        self.minCntsAdj = -70
+        self.maxCntsAdj = 70
+
+        # Style
+        # -- Font
+        self.fontFamily = "Poppins"
+        self.fontSize = 11
+        self.fontColor = "white"
+        # -- Plot
+        self.plotColor = "#4169e1"
+        self.plotSelectedColor = "#ffc445"
+        self.plotApproxColor = "#ff6745"
+        # -- Appearance
+        self.tFrameBg = "#21252b"
+        self.controlsTFrameBg = "#282c34"
+        self.tLabelBg = "#282c34"
+        self.tLabelFg = "white"
