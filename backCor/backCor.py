@@ -6,7 +6,14 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationTool
 from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
 
+# functools
 from functools import partial
+
+# subprocess
+from subprocess import call
+
+# winFonts
+from winFonts.winFonts import loadfont
 
 #tkinter
 import tkinter as tk
@@ -68,6 +75,13 @@ class BackCor(tk.Tk):
     # Set style
     def setStyle(self,settings):
         s = ThemedStyle()
+
+        # Loading custom font
+        # Se non trova Poppins/Custom font mette il default
+        if settings.fontFamily == "Poppins":
+            fontPath = os.path.join(settings.basePath,"fonts\\Poppins-Regular.ttf")
+            loadfont(fontPath,private = True)
+
         s.configure('TFrame',background = settings.tFrameBg)
         s.configure('controls.TFrame',background = settings.controlsTFrameBg)
         s.configure('TLabel',background = settings.tLabelBg,foreground = settings.tLabelFg,font = (settings.fontFamily,settings.fontSize))
@@ -111,14 +125,23 @@ class MenuBar(tk.Menu):
         fileMenu = tk.Menu(self,tearoff = 0)
         fileMenu.add_command(label = "Open",command = partial(self.openFile,data,self.parent,settings))
         fileMenu.add_separator()
-        fileMenu.add_command(label = "Settings")
-        fileMenu.add_separator()
         fileMenu.add_command(label = "Exit",command = parent.destroy)
         self.add_cascade(label = "File", menu = fileMenu)
 
         # Edit
         editMenu = tk.Menu(self, tearoff = 0)
+        editMenu.add_command(label = "Settings",command = partial(self.openSettings,settings))
         self.add_cascade(label="Edit", menu = editMenu)
+
+
+
+    def openSettings(self,settings):
+        if os.path.isfile(settings.settingsFilePath):
+            call(["notepad.exe",settings.settingsFilePath])
+            tk.messagebox.showwarning(title="Warning",message="Riavvia backCor per rendere effettive le modifiche")
+        else:
+            tk.messagebox.showerror(title="Loading error",message="Settings file non trovato - (data/userData/settings.json)")
+
 
 
     def openFile(self,data,parent,settings):
@@ -156,8 +179,7 @@ class MenuBar(tk.Menu):
         f = tk.filedialog.askopenfilename(
             parent = self.parent,
             initialdir = settings.favFolderPath,title = 'Choose file',
-            filetypes = [('wdf files','.wdf'),
-                         ('text files','.txt')]
+            filetype = [('data files','.wdf .txt')]
             )
         return f
 
@@ -231,6 +253,8 @@ class MenuBar(tk.Menu):
                 thrSlider.configure(state = tk.NORMAL)
                 # abilita counts adjust
                 cntSlider.configure(state = tk.NORMAL)
+                # disabilita selectedIdx
+                selectedIdxSlider.configure(state = tk.DISABLED)
 
             else:
                 #setta la label del numero di spettri
@@ -288,9 +312,6 @@ class PlotFrame(ttk.Frame):
         fig.patch.set_facecolor('#21252b')
 
         ax = fig.add_subplot(111)
-        # ax.fmt_xdata = lambda x:'{:.4f}'.format(x)
-        # ax.fmt_ydata = lambda y:'{:.4f}'.format(y)
-        # ax.format_coord = lambda x, y: ''
         ax.tick_params(axis='both', colors='white',labelsize = 12)
         ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
         ax.set_ylabel("Counts",fontsize = 15,color = "white")
@@ -299,11 +320,6 @@ class PlotFrame(ttk.Frame):
         canvas = FigureCanvasTkAgg(fig, master = self)
         canvas.get_tk_widget().grid(row = 0, column = 0,sticky = 'news',padx = 40, pady = 40)
         canvas.draw()
-        # #
-        # toolbarFrame = ttk.Frame(parent)
-        # toolbarFrame.grid(row = 100, column = 0)
-        # toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
-        # toolbar.update()
 
 
         self.canvas = canvas
@@ -517,6 +533,7 @@ class ControlsFrame(ttk.Frame):
 
         if max - min < self.nsLimit:
             self.selectedIdxSlider.configure(state = tk.NORMAL,from_ = min,to = max - 1)
+            self.selectedIdxSlider.set(min)
             self.costFunMenu.configure(state = tk.NORMAL)
             self.polyOrdSlider.configure(state = tk.NORMAL)
             self.thrSlider.configure(state = tk.NORMAL)
@@ -538,10 +555,10 @@ class ControlsFrame(ttk.Frame):
         #  if valid plot
         if valid:
             if max - min < self.nsLimit:
-                self.plotNSpectra(data,self.plotColor)
+                self.polyApx(data,self.cntVal.get())
             else:
                 self.plotNSpectra(data,None)
-            self.canvas.draw()
+                self.canvas.draw()
         else:
             tk.messagebox.showerror(title="Plot error",message="Inserisci dei valori di range validi")
 
@@ -710,6 +727,7 @@ class ControlsFrame(ttk.Frame):
         if data.nSpectra == 1:
             self.minIdxEntry.configure(state = tk.DISABLED)
             self.maxIdxEntry.configure(state = tk.DISABLED)
+            self.selectedIdxSlider.configure(state = tk.DISABLED)
         else:
             self.minIdxEntry.configure(state = tk.NORMAL)
             self.maxIdxEntry.configure(state = tk.NORMAL)
