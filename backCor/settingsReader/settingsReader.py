@@ -102,7 +102,7 @@ class SettingsReader():
         self.exportPath = self.basePath
 
         # Default settings
-        self.nsLimit = 6
+        self.nsLimit = 5
         self.minPolyOrd = 1
         self.maxPolyOrd = 15
         self.minThrVal = 0.01

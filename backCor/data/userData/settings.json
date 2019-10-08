@@ -1,7 +1,7 @@
 {
   "settings":{
     "controls":{
-        "nsLimit": 11,
+        "nsLimit": 10,
         "polyOrd":{
           "min": 3,
           "max": 15
