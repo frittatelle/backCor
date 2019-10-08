@@ -531,8 +531,8 @@ class ControlsFrame(ttk.Frame):
 
         valid = min < max
 
-        if max - min < self.nsLimit+1:
-            self.selectedIdxSlider.configure(state = tk.NORMAL,from_ = min,to = max - 1)
+        if max - min < self.nsLimit:
+            self.selectedIdxSlider.configure(state = tk.NORMAL,from_ = min,to = max-1)
             self.selectedIdxSlider.set(min)
             self.costFunMenu.configure(state = tk.NORMAL)
             self.polyOrdSlider.configure(state = tk.NORMAL)
