@@ -85,6 +85,7 @@ class BackCor(tk.Tk):
         s.configure('TFrame',background = settings.tFrameBg)
         s.configure('controls.TFrame',background = settings.controlsTFrameBg)
         s.configure('TLabel',background = settings.tLabelBg,foreground = settings.tLabelFg,font = (settings.fontFamily,settings.fontSize))
+        s.configure('TRadiobutton',background = settings.tLabelBg,foreground = settings.tLabelFg,font = (settings.fontFamily,settings.fontSize))
         s.configure('TButton',font = (settings.fontFamily,settings.fontSize))
 
 
@@ -97,7 +98,7 @@ class BackCor(tk.Tk):
         width = self.winfo_screenwidth()
         height = self.winfo_screenheight()
         # self.geometry("%dx%d+0+0" % (width,heigth))
-        self.geometry("%dx%d+0+0" % (width/2,height/2))
+        self.geometry("%dx%d+0+0" % (width/1.2,height/1.2))
         # minimum size
         self.minsize(int(width/2),int(height/2))
         #Title
@@ -304,7 +305,7 @@ class PlotFrame(ttk.Frame):
         ttk.Frame.__init__(self,parent)
         self.parent = parent
 
-        self.grid(row = 0, column = 0, columnspan = 90,rowspan = 100,sticky = "news")
+        self.grid(row = 0, column = 0, columnspan = 95,rowspan = 100,sticky = "news")
         self.columnconfigure(0,weight = 1)
         self.rowconfigure(0,weight = 1)
 
@@ -336,7 +337,7 @@ class ControlsFrame(ttk.Frame):
         ttk.Frame.__init__(self,parent)
         self.parent = parent
 
-        self.grid(row = 0,column = 90, columnspan = 10, rowspan = 100, sticky = "news")
+        self.grid(row = 0,column = 95, columnspan = 5, rowspan = 100, sticky = "news")
         self.configure(style = 'controls.TFrame')
         self.ax = self.parent.pFrame.ax
         self.canvas = self.parent.pFrame.canvas
@@ -351,7 +352,7 @@ class ControlsFrame(ttk.Frame):
 
         # Labels
         self.nSpectra = tk.IntVar()
-        nSpectraTextLabel = ttk.Label(master = self, text = "N° Spettri : ")
+        nSpectraTextLabel = ttk.Label(master = self, text = "# Spettri : ")
         nSpectraLabel = ttk.Label(master = self, textvariable = self.nSpectra)
         minIdxLabel = ttk.Label(self,text = "Min Idx: ")
         maxIdxLabel = ttk.Label(self,text = "Max Idx: ")
@@ -373,7 +374,8 @@ class ControlsFrame(ttk.Frame):
         self.minIdxEntry.bind('<Key-Return>',partial(self.checkPlotInput,data))
         self.maxIdxEntry.bind('<Key-Return>',partial(self.checkPlotInput,data))
 
-
+        # Select button
+        self.selectButton = ttk.Button(self,text = "Select",command = partial(self.checkPlotInput,data,'<Key-Return>'))
 
         # idx slider
         self.selectedIdx = tk.IntVar()
@@ -424,6 +426,26 @@ class ControlsFrame(ttk.Frame):
 
 
 
+        # ExportMode
+        self.expMode = tk.StringVar()
+        # TODO: change default in settings
+        self.expMode.set('Single')
+        expModeTextLabel = ttk.Label(self,text = "Export Mode:")
+        self.expModeRB1 = ttk.Radiobutton(self,text = 'Single',variable = self.expMode,value = 'Single')
+        self.expModeRB2 = ttk.Radiobutton(self,text = 'All',variable = self.expMode,value = 'All')
+        self.expModeRB3 = ttk.Radiobutton(self,text = 'View',variable = self.expMode,value = 'View')
+
+
+        # ApproxMode
+        self.approxMode = tk.StringVar()
+        # TODO: change default in settings
+        self.approxMode.set('Single')
+        approxModeTextLabel = ttk.Label(self,text = "Approx Mode:")
+        self.approxModeRB1 = ttk.Radiobutton(self,text = 'Single',variable = self.approxMode,value = 'Single')
+        self.approxModeRB2 = ttk.Radiobutton(self,text = 'All',variable = self.approxMode,value = 'All')
+
+
+
         # Sub Button
         self.subButton = ttk.Button(self,text = "Subtract",command = partial(self.polySub,data,cleanData))
         self.subButton.configure(state = tk.DISABLED)
@@ -448,14 +470,17 @@ class ControlsFrame(ttk.Frame):
             self.rowconfigure(i, weight = 1)
             self.columnconfigure(i, weight = 1)
         ghostLabel.grid(row = 3,column = 9,columnspan = 2)
-        ghostLabel.configure(width = 18)
-        nSpectraTextLabel.grid(row = 4, column = 10, columnspan = 3,sticky = 'news')
-        nSpectraLabel.grid(row = 4, column = 11, columnspan = 3,sticky = 'news')
+        ghostLabel.configure(width = 20)
+        nSpectraTextLabel.grid(row = 4, column = 10, columnspan = 1,sticky = 'ew')
+        nSpectraLabel.grid(row = 4, column = 11, columnspan = 1,sticky = 'nsw')
+        self.selectButton.grid(row = 4, column = 11, columnspan = 1,sticky = 'nse')
+        self.selectButton.configure(width = 7)
 
         minIdxLabel.grid(row = 8, column = 10, columnspan = 1,sticky = 'news')
         self.minIdxEntry.grid(row = 8, column = 11 ,sticky = 'ew')
         maxIdxLabel.grid(row = 9, column = 10, columnspan = 1,sticky = 'news')
         self.maxIdxEntry.grid(row = 9, column = 11 ,sticky = 'ew')
+
 
         selectedIdxTextLabel.grid(row = 12, column = 10, columnspan = 1,sticky = 'news')
         selectedIdxLabel.grid(row = 12,column = 11,columnspan = 1, sticky = 'news')
@@ -478,11 +503,20 @@ class ControlsFrame(ttk.Frame):
         self.cntSlider.grid(row = 60,column = 10,columnspan = 4,sticky = 'ew')
 
 
+        expModeTextLabel.grid(row = 73, column = 10, columnspan = 1,sticky = 'news')
+        self.expModeRB1.grid(row = 75,column = 10,columnspan = 2,sticky = 'w')
+        self.expModeRB2.grid(row = 76,column = 10,columnspan = 2,sticky = 'w')
+        self.expModeRB3.grid(row = 77,column = 10,columnspan = 2,sticky = 'w')
 
-        self.subButton.grid(row = 76,column = 10,columnspan = 1,sticky = 'ew')
-        self.backButton.grid(row = 77,column = 10,columnspan = 1,sticky = 'ew')
+        approxModeTextLabel.grid(row = 73, column = 11, columnspan = 1,sticky = 'news')
+        self.approxModeRB1.grid(row = 75,column = 11,columnspan = 2,sticky = 'w')
+        self.approxModeRB2.grid(row = 76,column = 11,columnspan = 2,sticky = 'w')
 
-        self.exportButton.grid(row = 89,column = 10,columnspan = 1,sticky = 'ew')
+
+        self.subButton.grid(row = 88,column = 10,columnspan = 1,sticky = ' w')
+        self.exportButton.grid(row = 88,column = 11,columnspan = 1,sticky = 'ew')
+        self.backButton.grid(row = 89,column = 10,columnspan = 1,sticky = 'w')
+
 
 
 
@@ -532,7 +566,7 @@ class ControlsFrame(ttk.Frame):
         valid = min < max
 
         if max - min < self.nsLimit:
-            self.selectedIdxSlider.configure(state = tk.NORMAL,from_ = min,to = max-1)
+            self.selectedIdxSlider.configure(state = tk.NORMAL,from_ = min,to = max)
             self.selectedIdxSlider.set(min)
             self.costFunMenu.configure(state = tk.NORMAL)
             self.polyOrdSlider.configure(state = tk.NORMAL)
@@ -563,14 +597,15 @@ class ControlsFrame(ttk.Frame):
             tk.messagebox.showerror(title="Plot error",message="Inserisci dei valori di range validi")
 
 
-    # Upddate selected idx
+    # Update selected idx
     def selUpdate(self,data,val):
         idx = int(float(val))
         self.selectedIdx.set(idx)
         # self.plotNSpectra(data,self.plotColor)
         # self.canvas.draw()
         self.polyApx(data,self.cntVal.get())
-    # Upddate cost function
+
+    # Update cost function
     def costFunUpdate(self,data,val):
         self.costFunVal.set(val)
         self.polyApx(data,self.cntVal.get())
@@ -686,7 +721,7 @@ class ControlsFrame(ttk.Frame):
 
         # plot degli spettri nel range indicato
         if not self.ax.lines:
-            for i in range(rangeMin,rangeMax):
+            for i in range(rangeMin,rangeMax + 1):
                 try:
                     # Se sono in fase di selezione o visualizzazione
                     if color is None:
@@ -698,12 +733,12 @@ class ControlsFrame(ttk.Frame):
                         else:
                             self.ax.plot(data.ramanShift,data.spectraData[i],color)
                 except:
-                    return True
+                    pass
 
-                # setting plot limits
-                l = data.ramanShift[0]
-                r = data.ramanShift[-1]
-                self.ax.set_xlim(l,r)
+            # setting plot limits
+            l = data.ramanShift[0]
+            r = data.ramanShift[-1]
+            self.ax.set_xlim(l,r)
 
 
     # Back
