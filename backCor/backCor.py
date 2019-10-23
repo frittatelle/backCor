@@ -27,13 +27,14 @@ from dataReader.dataReader import DataReader
 from dataBlock.dataBlock import Data
 
 # polyApprox
-from polyApprox.polyApprox import PolyApprox,PolyApproxIdx
+from polyApprox.polyApprox import PolyApprox,PolyApproxIdx,PolyApproxMulti
 
 # settingsReader
 from settingsReader.settingsReader import SettingsReader
 
 #numpy
 import numpy as np
+import numpy.matlib as npm
 
 #os
 import os as os
@@ -98,7 +99,7 @@ class BackCor(tk.Tk):
         width = self.winfo_screenwidth()
         height = self.winfo_screenheight()
         # self.geometry("%dx%d+0+0" % (width,heigth))
-        self.geometry("%dx%d+0+0" % (width/1.2,height/1.2))
+        self.geometry("%dx%d+0+0" % (width/1.3,height/1.3))
         # minimum size
         self.minsize(int(width/2),int(height/2))
         #Title
@@ -342,12 +343,12 @@ class ControlsFrame(ttk.Frame):
         self.ax = self.parent.pFrame.ax
         self.canvas = self.parent.pFrame.canvas
 
+        # Settings
         self.nsLimit = settings.nsLimit
         self.plotColor = settings.plotColor
         self.plotSelectedColor = settings.plotSelectedColor
         self.plotApproxColor = settings.plotApproxColor
         self.exportPath = settings.exportPath
-
 
 
         # Labels
@@ -357,7 +358,6 @@ class ControlsFrame(ttk.Frame):
         minIdxLabel = ttk.Label(self,text = "Min Idx: ")
         maxIdxLabel = ttk.Label(self,text = "Max Idx: ")
         ghostLabel = ttk.Label(self,text = "          ")
-
 
 
         # Entries
@@ -374,8 +374,10 @@ class ControlsFrame(ttk.Frame):
         self.minIdxEntry.bind('<Key-Return>',partial(self.checkPlotInput,data))
         self.maxIdxEntry.bind('<Key-Return>',partial(self.checkPlotInput,data))
 
+
         # Select button
         self.selectButton = ttk.Button(self,text = "Select",command = partial(self.checkPlotInput,data,'<Key-Return>'))
+
 
         # idx slider
         self.selectedIdx = tk.IntVar()
@@ -383,7 +385,6 @@ class ControlsFrame(ttk.Frame):
         selectedIdxLabel = ttk.Label(self,textvariable = self.selectedIdx)
         self.selectedIdxSlider = ttk.Scale(self,orient = tk.HORIZONTAL,command = partial(self.selUpdate,data))
         self.selectedIdxSlider.configure(state = tk.DISABLED)
-
 
 
         # cost function - dropdown menu
@@ -395,7 +396,6 @@ class ControlsFrame(ttk.Frame):
         self.costFunMenu.configure(state = tk.DISABLED)
 
 
-
         # poly order
         self.polyOrdVal = tk.IntVar()
         self.polyOrdVal.set(settings.minPolyOrd)
@@ -403,7 +403,6 @@ class ControlsFrame(ttk.Frame):
         polyOrdLabel = ttk.Label(self,textvariable = self.polyOrdVal)
         self.polyOrdSlider = ttk.Scale(self,from_ = settings.minPolyOrd,to = settings.maxPolyOrd,orient = tk.HORIZONTAL,command = partial(self.polyUpdate,data))
         self.polyOrdSlider.configure(state = tk.DISABLED)
-
 
 
         # threshold
@@ -415,7 +414,6 @@ class ControlsFrame(ttk.Frame):
         self.thrSlider.configure(state = tk.DISABLED)
 
 
-
         # cntVal
         self.cntVal = tk.DoubleVar()
         self.cntVal.set(0)
@@ -425,25 +423,27 @@ class ControlsFrame(ttk.Frame):
         self.cntSlider.configure(state = tk.DISABLED)
 
 
-
         # ExportMode
         self.expMode = tk.StringVar()
         # TODO: change default in settings
         self.expMode.set('Single')
         expModeTextLabel = ttk.Label(self,text = "Export Mode:")
-        self.expModeRB1 = ttk.Radiobutton(self,text = 'Single',variable = self.expMode,value = 'Single')
-        self.expModeRB2 = ttk.Radiobutton(self,text = 'All',variable = self.expMode,value = 'All')
-        self.expModeRB3 = ttk.Radiobutton(self,text = 'View',variable = self.expMode,value = 'View')
-
+        self.expModeRB1 = ttk.Radiobutton(self,text = 'Single',variable = self.expMode,value = 'Single',command = partial(self.expmUpdate,data))
+        self.expModeRB2 = ttk.Radiobutton(self,text = 'All',variable = self.expMode,value = 'All',command = partial(self.expmUpdate,data))
+        self.expModeRB3 = ttk.Radiobutton(self,text = 'View',variable = self.expMode,value = 'View',command = partial(self.expmUpdate,data))
+        self.expModeRB1.configure(state = tk.DISABLED)
+        self.expModeRB2.configure(state = tk.DISABLED)
+        self.expModeRB3.configure(state = tk.DISABLED)
 
         # ApproxMode
         self.approxMode = tk.StringVar()
         # TODO: change default in settings
         self.approxMode.set('Single')
         approxModeTextLabel = ttk.Label(self,text = "Approx Mode:")
-        self.approxModeRB1 = ttk.Radiobutton(self,text = 'Single',variable = self.approxMode,value = 'Single')
-        self.approxModeRB2 = ttk.Radiobutton(self,text = 'All',variable = self.approxMode,value = 'All')
-
+        self.approxModeRB1 = ttk.Radiobutton(self,text = 'Single',variable = self.approxMode,value = 'Single',command = partial(self.apxmUpdate,data))
+        self.approxModeRB2 = ttk.Radiobutton(self,text = 'Multiple',variable = self.approxMode,value = 'Multiple',command = partial(self.apxmUpdate,data))
+        self.approxModeRB1.configure(state = tk.DISABLED)
+        self.approxModeRB2.configure(state = tk.DISABLED)
 
 
         # Sub Button
@@ -451,17 +451,14 @@ class ControlsFrame(ttk.Frame):
         self.subButton.configure(state = tk.DISABLED)
 
 
-
         # Back Button
         self.backButton = ttk.Button(self,text = "Back",command = partial(self.goBack,data,cleanData))
         self.backButton.configure(state = tk.DISABLED)
 
 
-
         # Export Button
         self.exportButton = ttk.Button(self,text = "Export",command = partial(self.exportData,cleanData))
         self.exportButton.configure(state = tk.DISABLED)
-
 
 
 
@@ -505,8 +502,8 @@ class ControlsFrame(ttk.Frame):
 
         expModeTextLabel.grid(row = 73, column = 10, columnspan = 1,sticky = 'news')
         self.expModeRB1.grid(row = 75,column = 10,columnspan = 2,sticky = 'w')
-        self.expModeRB2.grid(row = 76,column = 10,columnspan = 2,sticky = 'w')
-        self.expModeRB3.grid(row = 77,column = 10,columnspan = 2,sticky = 'w')
+        self.expModeRB2.grid(row = 77,column = 10,columnspan = 2,sticky = 'w')
+        self.expModeRB3.grid(row = 76,column = 10,columnspan = 2,sticky = 'w')
 
         approxModeTextLabel.grid(row = 73, column = 11, columnspan = 1,sticky = 'news')
         self.approxModeRB1.grid(row = 75,column = 11,columnspan = 2,sticky = 'w')
@@ -589,7 +586,7 @@ class ControlsFrame(ttk.Frame):
         #  if valid plot
         if valid:
             if max - min < self.nsLimit:
-                self.polyApx(data,self.cntVal.get())
+                self.polyApx(data)
             else:
                 self.plotNSpectra(data,None)
                 self.canvas.draw()
@@ -603,37 +600,65 @@ class ControlsFrame(ttk.Frame):
         self.selectedIdx.set(idx)
         # self.plotNSpectra(data,self.plotColor)
         # self.canvas.draw()
-        self.polyApx(data,self.cntVal.get())
-
+        self.polyApx(data)
     # Update cost function
     def costFunUpdate(self,data,val):
         self.costFunVal.set(val)
-        self.polyApx(data,self.cntVal.get())
+        self.polyApx(data)
     # Update polynomial oreder
     def polyUpdate(self,data,val):
         idx = int(float(val))
         self.polyOrdVal.set(idx)
-        self.polyApx(data,self.cntVal.get())
+        self.polyApx(data)
     # Update threshold
     def thrUpdate(self,data,val):
         idx = float(val)
         idx = round(idx,2)
         self.thrVal.set(idx)
-        self.polyApx(data,self.cntVal.get())
+        self.polyApx(data)
     # Update counts adjust
     def cntUpdate(self,data,val):
         idx = float(val)
         idx = round(idx,2)
         self.cntVal.set(idx)
-        self.polyApx(data,self.cntVal.get())
+        self.polyApx(data)
+    # Update approxMode
+    def apxmUpdate(self,data):
+        mode = self.approxMode.get()
+        if mode == "Single":
+            self.selectedIdxSlider.configure(state = tk.NORMAL)
+            self.expModeRB1.configure(state = tk.NORMAL)
+        elif mode == "Multiple":
+            self.selectedIdxSlider.configure(state = tk.DISABLED)
+            self.expModeRB1.configure(state = tk.DISABLED)
+        self.polyApx(data)
+    # Update expMode
+    def expmUpdate(self,data):
+        expMode = self.expMode.get()
+        self.polyApx(data)
 
 
     #  Approssimazione polinomiale con shift
-    def polyApx(self,data,shift):
+    def polyApx(self,data):
+        mode = self.approxMode.get()
+        shift = self.cntVal.get()
+        # mode and nSpectra
         if data.nSpectra == 1:
-            polyApprox = PolyApprox(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get())
+            polyApprox = PolyApprox(data,self.polyOrdVal.get(),
+                                    self.thrVal.get(),
+                                    self.costFunVal.get())
         else:
-            polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
+            if mode == "Single":
+                polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),
+                                           self.thrVal.get(),
+                                           self.costFunVal.get(),
+                                           self.selectedIdx.get())
+            elif mode == "Multiple":
+                polyApprox = PolyApproxMulti(data,self.polyOrdVal.get(),
+                                             self.thrVal.get(),
+                                             self.costFunVal.get(),
+                                             self.minIdxSpectra.get(),
+                                             self.maxIdxSpectra.get())
         polyApprox.approx()
         polyApprox.spectraApprox = polyApprox.spectraApprox + shift
         self.polyPlot(data,polyApprox)
@@ -644,17 +669,48 @@ class ControlsFrame(ttk.Frame):
         # Creazione oggetto clean data
         cleanData.pointsPerSpectrum = data.pointsPerSpectrum
         cleanData.ramanShift = data.ramanShift
-        # 1 or more spectra
+        cleanData.nSpectra = data.nSpectra
+        expMode = self.expMode.get()
+        apxMode = self.approxMode.get()
+        # 1 or more spectra and exportMode
         if data.nSpectra == 1:
             polyApprox = PolyApprox(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get())
             polyApprox.approx()
-            cleanData.spectraData = data.spectraData- polyApprox.spectraApprox
+            cleanData.spectraData = data.spectraData - polyApprox.spectraApprox
+            self.easyPlot(cleanData,self.plotColor)
         else:
-            polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
-            polyApprox.approx()
-            cleanData.spectraData = data.spectraData[self.selectedIdx.get()] - polyApprox.spectraApprox
+            if apxMode == "Single":
+                if expMode == "Single":
+                    polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
+                    polyApprox.approx()
+                    cleanData.spectraData = data.spectraData[self.selectedIdx.get()] - polyApprox.spectraApprox
+                    self.easyPlot(cleanData,self.plotColor)
 
-        self.easyPlot(cleanData,self.plotColor)
+                elif expMode == "All":
+                    polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
+                    polyApprox.approx()
+                    cleanData.spectraData = data.spectraData - polyApprox.spectraApprox
+                    self.plotAll(cleanData,self.plotColor)
+
+                elif expMode == "View":
+                    polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
+                    polyApprox.approx()
+                    cleanData.spectraData = data.spectraData - polyApprox.spectraApprox
+                    self.plotNSpectra(cleanData,None)
+
+            elif apxMode == "Multiple":
+                if expMode == "All":
+                    polyApprox = PolyApproxMulti(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),0,data.nSpectra)
+                    polyApprox.approx()
+                    cleanData.spectraData = data.spectraData - polyApprox.spectraApprox.T
+                    self.plotAll(cleanData,self.plotColor)
+
+                elif expMode == "View":
+                    polyApprox = PolyApproxMulti(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.minIdxSpectra.get(),self.maxIdxSpectra.get())
+                    polyApprox.approx()
+                    cleanData.spectraData = data.spectraData[self.minIdxSpectra.get():self.maxIdxSpectra.get()+1] - polyApprox.spectraApprox.T
+                    self.plotAll(cleanData,self.plotColor)
+
         self.canvas.draw()
 
 
@@ -671,7 +727,6 @@ class ControlsFrame(ttk.Frame):
         self.maxIdxEntry.configure(state = tk.DISABLED)
 
 
-
     # Plot approssimazione polinomiale + data
     def polyPlot(self,data,polyApprox):
         if data.nSpectra == 1:
@@ -680,7 +735,6 @@ class ControlsFrame(ttk.Frame):
             self.plotNSpectra(data,self.plotColor)
         self.ax.plot(data.ramanShift,polyApprox.spectraApprox,self.plotApproxColor)
         self.canvas.draw()
-
     # EasyPlot
     def easyPlot(self,data,color):
         self.ax.cla()
@@ -696,7 +750,19 @@ class ControlsFrame(ttk.Frame):
         l = data.ramanShift[0]
         r = data.ramanShift[-1]
         self.ax.set_xlim(l,r)
+    # PlotAll
+    def plotAll(self,data,color):
+        self.ax.cla()
+        self.ax.tick_params(axis='both', colors='white',labelsize = 12)
+        self.ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
+        self.ax.set_ylabel("Counts",fontsize = 15,color = "white")
 
+        self.ax.plot(data.ramanShift,data.spectraData.T)
+
+        # setting plot limits
+        l = data.ramanShift[0]
+        r = data.ramanShift[-1]
+        self.ax.set_xlim(l,r)
     # Plot multispettrale
     def plotNSpectra(self,data,color):
 
@@ -721,6 +787,7 @@ class ControlsFrame(ttk.Frame):
 
         # plot degli spettri nel range indicato
         if not self.ax.lines:
+
             for i in range(rangeMin,rangeMax + 1):
                 try:
                     # Se sono in fase di selezione o visualizzazione
@@ -728,12 +795,13 @@ class ControlsFrame(ttk.Frame):
                         self.ax.plot(data.ramanShift,data.spectraData[i])
                     else:
                         # Se lo spettro da plottare e' quello selezionato, plotta in colore selezione
-                        if i == self.selectedIdx.get():
+                        if i == self.selectedIdx.get() and self.approxMode.get() == "Single":
                             self.ax.plot(data.ramanShift,data.spectraData[i],self.plotSelectedColor)
                         else:
                             self.ax.plot(data.ramanShift,data.spectraData[i],color)
                 except:
                     pass
+
 
             # setting plot limits
             l = data.ramanShift[0]
@@ -748,7 +816,7 @@ class ControlsFrame(ttk.Frame):
         cleanData.nSpectra = None
 
         # Approssima e plotta (back)
-        self.polyApx(data,self.cntVal.get())
+        self.polyApx(data)
 
         # Reset controlli
         self.selectedIdxSlider.configure(state = tk.NORMAL)
@@ -766,7 +834,6 @@ class ControlsFrame(ttk.Frame):
         else:
             self.minIdxEntry.configure(state = tk.NORMAL)
             self.maxIdxEntry.configure(state = tk.NORMAL)
-
     # Export
     def exportData(self,cleanData):
         try:
