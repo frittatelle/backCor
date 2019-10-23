@@ -136,15 +136,12 @@ class MenuBar(tk.Menu):
         self.add_cascade(label="Edit", menu = editMenu)
 
 
-
     def openSettings(self,settings):
         if os.path.isfile(settings.settingsFilePath):
             call(["notepad.exe",settings.settingsFilePath])
             tk.messagebox.showwarning(title="Warning",message="Riavvia backCor per rendere effettive le modifiche")
         else:
             tk.messagebox.showerror(title="Loading error",message="Settings file non trovato - (data/userData/settings.json)")
-
-
 
     def openFile(self,data,parent,settings):
 
@@ -172,10 +169,6 @@ class MenuBar(tk.Menu):
 
         except:
             pass
-
-
-
-
 
     def browseFile(self,settings):
         f = tk.filedialog.askopenfilename(
@@ -205,7 +198,12 @@ class MenuBar(tk.Menu):
         backButton = self.parent.cFrame.backButton
         exportButton = self.parent.cFrame.exportButton
         selectedIdxSlider = self.parent.cFrame.selectedIdxSlider
-
+        selectButton = self.parent.cFrame.selectButton
+        approxModeRB1 = self.parent.cFrame.approxModeRB1
+        approxModeRB2 = self.parent.cFrame.approxModeRB2
+        expModeRB1 = self.parent.cFrame.expModeRB1
+        expModeRB2 = self.parent.cFrame.expModeRB2
+        expModeRB3 = self.parent.cFrame.expModeRB3
 
         # data
         pointsPerSpectrum = data.pointsPerSpectrum
@@ -258,6 +256,14 @@ class MenuBar(tk.Menu):
                 # disabilita selectedIdx
                 selectedIdxSlider.configure(state = tk.DISABLED)
 
+                selectButton.configure(state = tk.DISABLED)
+                expModeRB1.configure(state = tk.NORMAL)
+                expModeRB2.configure(state = tk.DISABLED)
+                expModeRB3.configure(state = tk.DISABLED)
+                approxModeRB1.configure(state = tk.NORMAL)
+                approxModeRB2.configure(state = tk.DISABLED)
+
+
             else:
                 #setta la label del numero di spettri
                 nSpectra.set(data.nSpectra)
@@ -279,7 +285,12 @@ class MenuBar(tk.Menu):
                 # disabilita cntSlider
                 cntSlider.configure(state = tk.DISABLED)
 
-
+                selectButton.configure(state = tk.NORMAL)
+                expModeRB1.configure(state = tk.DISABLED)
+                expModeRB2.configure(state = tk.DISABLED)
+                expModeRB3.configure(state = tk.DISABLED)
+                approxModeRB1.configure(state = tk.DISABLED)
+                approxModeRB2.configure(state = tk.DISABLED)
 
                 # setta i default delle entry
                 minIdxSpectra.set(0)
@@ -377,6 +388,7 @@ class ControlsFrame(ttk.Frame):
 
         # Select button
         self.selectButton = ttk.Button(self,text = "Select",command = partial(self.checkPlotInput,data,'<Key-Return>'))
+        self.selectButton.configure(state = tk.DISABLED)
 
 
         # idx slider
@@ -534,7 +546,6 @@ class ControlsFrame(ttk.Frame):
         if not val:
             valid = True
         return valid
-
     def validateMaxIdx(self,data,val):
         # valido se e' un numero
         valid = val.isdigit()
@@ -563,8 +574,6 @@ class ControlsFrame(ttk.Frame):
         valid = min < max
 
         if max - min < self.nsLimit:
-            self.selectedIdxSlider.configure(state = tk.NORMAL,from_ = min,to = max)
-            self.selectedIdxSlider.set(min)
             self.costFunMenu.configure(state = tk.NORMAL)
             self.polyOrdSlider.configure(state = tk.NORMAL)
             self.thrSlider.configure(state = tk.NORMAL)
@@ -572,6 +581,19 @@ class ControlsFrame(ttk.Frame):
             self.subButton.configure(state = tk.NORMAL)
             self.backButton.configure(state = tk.DISABLED)
             self.exportButton.configure(state = tk.DISABLED)
+            self.expModeRB2.configure(state = tk.NORMAL)
+            self.expModeRB3.configure(state = tk.NORMAL)
+            self.approxModeRB1.configure(state = tk.NORMAL)
+            self.approxModeRB2.configure(state = tk.NORMAL)
+
+            if self.approxMode.get() == "Single":
+                self.expModeRB1.configure(state = tk.NORMAL)
+                self.selectedIdxSlider.configure(state = tk.NORMAL,from_ = min,to = max)
+                self.selectedIdxSlider.set(min)
+            else:
+                self.expModeRB1.configure(state = tk.DISABLED)
+                self.selectedIdxSlider.configure(state = tk.DISABLED)
+
         else:
             self.selectedIdxSlider.configure(state = tk.DISABLED)
             self.costFunMenu.configure(state = tk.DISABLED)
@@ -581,6 +603,11 @@ class ControlsFrame(ttk.Frame):
             self.subButton.configure(state = tk.DISABLED)
             self.backButton.configure(state = tk.DISABLED)
             self.exportButton.configure(state = tk.DISABLED)
+            self.expModeRB1.configure(state = tk.DISABLED)
+            self.expModeRB2.configure(state = tk.DISABLED)
+            self.expModeRB3.configure(state = tk.DISABLED)
+            self.approxModeRB1.configure(state = tk.DISABLED)
+            self.approxModeRB2.configure(state = tk.DISABLED)
 
 
         #  if valid plot
@@ -626,11 +653,13 @@ class ControlsFrame(ttk.Frame):
     def apxmUpdate(self,data):
         mode = self.approxMode.get()
         if mode == "Single":
-            self.selectedIdxSlider.configure(state = tk.NORMAL)
+            self.selectedIdxSlider.configure(state = tk.NORMAL,from_ = self.minIdxSpectra.get(),to = self.maxIdxSpectra.get())
+            self.selectedIdxSlider.set(self.minIdxSpectra.get())
             self.expModeRB1.configure(state = tk.NORMAL)
         elif mode == "Multiple":
             self.selectedIdxSlider.configure(state = tk.DISABLED)
             self.expModeRB1.configure(state = tk.DISABLED)
+            self.expMode.set("View")
         self.polyApx(data)
     # Update expMode
     def expmUpdate(self,data):
@@ -725,6 +754,14 @@ class ControlsFrame(ttk.Frame):
         self.exportButton.configure(state = tk.NORMAL)
         self.minIdxEntry.configure(state = tk.DISABLED)
         self.maxIdxEntry.configure(state = tk.DISABLED)
+        self.selectButton.configure(state = tk.DISABLED)
+        self.expModeRB1.configure(state = tk.DISABLED)
+        self.expModeRB2.configure(state = tk.DISABLED)
+        self.expModeRB3.configure(state = tk.DISABLED)
+        self.approxModeRB1.configure(state = tk.DISABLED)
+        self.approxModeRB2.configure(state = tk.DISABLED)
+
+
 
 
     # Plot approssimazione polinomiale + data
@@ -819,7 +856,6 @@ class ControlsFrame(ttk.Frame):
         self.polyApx(data)
 
         # Reset controlli
-        self.selectedIdxSlider.configure(state = tk.NORMAL)
         self.costFunMenu.configure(state = tk.NORMAL)
         self.polyOrdSlider.configure(state = tk.NORMAL)
         self.thrSlider.configure(state = tk.NORMAL)
@@ -827,13 +863,28 @@ class ControlsFrame(ttk.Frame):
         self.subButton.configure(state = tk.NORMAL)
         self.backButton.configure(state = tk.DISABLED)
         self.exportButton.configure(state = tk.DISABLED)
+        self.expModeRB2.configure(state = tk.NORMAL)
+        self.expModeRB3.configure(state = tk.NORMAL)
+        self.approxModeRB1.configure(state = tk.NORMAL)
+        self.approxModeRB2.configure(state = tk.NORMAL)
+
+        if self.approxMode.get() == "Single":
+            self.expModeRB1.configure(state = tk.NORMAL)
+            self.selectedIdxSlider.configure(state = tk.NORMAL)
+        else:
+            self.expModeRB1.configure(state = tk.DISABLED)
+            self.selectedIdxSlider.configure(state = tk.DISABLED)
+
+
         if data.nSpectra == 1:
             self.minIdxEntry.configure(state = tk.DISABLED)
             self.maxIdxEntry.configure(state = tk.DISABLED)
+            self.selectButton.configure(state = tk.DISABLED)
             self.selectedIdxSlider.configure(state = tk.DISABLED)
         else:
             self.minIdxEntry.configure(state = tk.NORMAL)
             self.maxIdxEntry.configure(state = tk.NORMAL)
+            self.selectButton.configure(state = tk.NORMAL)
     # Export
     def exportData(self,cleanData):
         try:
@@ -843,7 +894,11 @@ class ControlsFrame(ttk.Frame):
                 initialdir = self.exportPath,title = 'Save file',
                 filetypes = [('text files','*.txt')])
             f.write("Raman Shift [1/cm]    Counts\n")
-            np.savetxt(f,np.c_[cleanData.ramanShift,cleanData.spectraData],fmt="%f")
+
+            if cleanData.nSpectra == 1:
+                np.savetxt(f,np.c_[cleanData.ramanShift,cleanData.spectraData],fmt="%f")
+            else:
+                np.savetxt(f,np.c_[cleanData.ramanShift,cleanData.spectraData.T],fmt="%f")
 
             tk.messagebox.showinfo("Salvataggio completato","File salvato correttamente")
         except:
