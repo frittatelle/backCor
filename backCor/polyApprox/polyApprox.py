@@ -4,9 +4,6 @@ import numpy as np
 import numpy.matlib as npm
 import numpy.linalg as npl
 
-import matplotlib
-import matplotlib.pyplot as plt
-
 
 class PolyApprox():
     def __init__(self,data,polyOrd,thr,costFun):
@@ -95,17 +92,49 @@ class PolyApprox():
     def rescale(self):
         self.spectraApprox = 0.5 * (self.maxD - self.minD) * (self.spectraApprox - 1) + self.maxD
 
-
 class PolyApproxIdx(PolyApprox):
     def __init__(self,data,polyOrd,thr,costFun,idx):
         PolyApprox.__init__(self,data,polyOrd,thr,costFun)
         self.idx = idx
         self.spectraData = self.spectraData[idx]
 
+class PolyApproxMulti(PolyApprox):
+    def __init__(self,data,polyOrd,thr,costFun,minIdx,maxIdx):
+        PolyApprox.__init__(self,data,polyOrd,thr,costFun)
+        self.spectraData = self.spectraData[minIdx:maxIdx+1]
 
+    def initialize(self):
+        # Coefficienti del polinomio approssimante
+        self.polyCoeff = np.dot(self.Tinv,self.spectraData.T)
+        # Polinomio approssimante
+        self.spectraApprox = np.dot(self.T,self.polyCoeff).T
 
-# f = "C:/Users/Luca/Desktop/Lab/Backcor GUI/A _ Ca Apatite (variant 0) Ref.wdf"
-# # f = "C:/Users/Luca/Desktop/Lab/Backcor GUI/A _ 01 176 A 18_Slice 10micron 785 1200 3sx1 MAP Step 8um_CR.wdf"
-# dataR = DataReader(fileName = f)
-# data = Data(dataR.pointsPerSpectrum,dataR.ramanShift,dataR.spectraData)
-# polyApprox = PolyApprox(data,12,0.01,"sh")
+        self.alpha = 0.99 * 0.5
+        # Stima prior
+        self.spectraApproxP = np.ones(self.pointsPerSpectrum)
+
+    def estimate(self):
+        while np.sum(np.power((self.spectraApprox - self.spectraApproxP),2)) / np.sum(np.power(self.spectraApproxP,2)) > 1e-9:
+
+            self.spectraApproxP = self.spectraApprox       # Previous estimation
+            res = self.spectraData - self.spectraApprox    # Residui
+            alpha = self.alpha
+            costFun = self.costFun
+            thr = self.thr
+
+            # Estiamte d
+            if costFun == "sh":
+                d = (res*(2*alpha-1)) * (np.abs(res)<thr) + (-alpha*2*thr-res) * (res<=-thr) + (alpha*2*thr-res) * (res>=thr);
+            elif costFun == "ah":
+                d = (res*(2*alpha-1)) * (res<thr) + (alpha*2*thr-res) * (res>=thr)
+            elif costFun == "stq":
+                d = (res*(2*alpha-1)) * (np.abs(res)<thr) - res * (np.abs(res)>=thr)
+            elif costFun == "atq":
+                d = (res*(2*alpha-1)) * (res<thr) - res * (res>=thr)
+
+            # Estimate z
+            self.polyCoeff = np.dot(self.Tinv,(self.spectraData + d).T)
+            self.spectraApprox = np.dot(self.T,self.polyCoeff).T
+
+        # Transpose for multi
+        self.spectraApprox = self.spectraApprox.T
