@@ -437,8 +437,7 @@ class ControlsFrame(ttk.Frame):
 
         # ExportMode
         self.expMode = tk.StringVar()
-        # TODO: change default in settings
-        self.expMode.set('Single')
+        self.expMode.set("Single")
         expModeTextLabel = ttk.Label(self,text = "Export Mode:")
         self.expModeRB1 = ttk.Radiobutton(self,text = 'Single',variable = self.expMode,value = 'Single',command = partial(self.expmUpdate,data))
         self.expModeRB2 = ttk.Radiobutton(self,text = 'All',variable = self.expMode,value = 'All',command = partial(self.expmUpdate,data))
@@ -449,8 +448,7 @@ class ControlsFrame(ttk.Frame):
 
         # ApproxMode
         self.approxMode = tk.StringVar()
-        # TODO: change default in settings
-        self.approxMode.set('Single')
+        self.approxMode.set("Single")
         approxModeTextLabel = ttk.Label(self,text = "Approx Mode:")
         self.approxModeRB1 = ttk.Radiobutton(self,text = 'Single',variable = self.approxMode,value = 'Single',command = partial(self.apxmUpdate,data))
         self.approxModeRB2 = ttk.Radiobutton(self,text = 'Multiple',variable = self.approxMode,value = 'Multiple',command = partial(self.apxmUpdate,data))
