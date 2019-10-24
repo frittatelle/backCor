@@ -23,7 +23,6 @@
         "plotApproxColor": "#ff6745"
       },
       "font":{
-        "fontFamily": "Poppins",
         "fontSize":11,
         "fontColor":"white"
       },
