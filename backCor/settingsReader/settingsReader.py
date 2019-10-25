@@ -69,8 +69,6 @@ class SettingsReader():
                 j["maxThrVal"] = data['settings']['controls']['thrVal']['max']
                 j["minCntsAdj"] = data['settings']['controls']['cntsAdj']['min']
                 j["maxThrVal"] = data['settings']['controls']['cntsAdj']['max']
-                j["approxMode"] = data['settings']['controls']['approxMode']
-                j["exportMode"] = data['settings']['controls']['exportMode']
 
                 # Style
                 # -- Font
