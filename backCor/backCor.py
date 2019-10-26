@@ -4,7 +4,8 @@ import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.figure import Figure
-from matplotlib.ticker import MultipleLocator
+from matplotlib.ticker import MultipleLocator,AutoMinorLocator
+from cycler import cycler
 
 # functools
 from functools import partial
@@ -36,6 +37,9 @@ from settingsReader.settingsReader import SettingsReader
 import numpy as np
 import numpy.matlib as npm
 
+# math
+import math
+
 #os
 import os as os
 
@@ -60,17 +64,17 @@ class BackCor(tk.Tk):
         data = Data(None,None,None)
         cleanData = Data(None,None,None)
 
-        # MenuBar
-        menuBar = MenuBar(self,data,settings)
 
         # PlotFrame
-        pFrame = PlotFrame(self)
+        pFrame = PlotFrame(self,settings)
         self.pFrame = pFrame
 
         # ControlsFrame
         cFrame = ControlsFrame(self,data,cleanData,settings)
         self.cFrame = cFrame
 
+        # MenuBar
+        menuBar = MenuBar(self,data,settings)
 
 
     # Set style
@@ -88,7 +92,6 @@ class BackCor(tk.Tk):
         s.configure('TLabel',background = settings.tLabelBg,foreground = settings.tLabelFg,font = (settings.fontFamily,settings.fontSize))
         s.configure('TRadiobutton',background = settings.tLabelBg,foreground = settings.tLabelFg,font = (settings.fontFamily,settings.fontSize))
         s.configure('TButton',font = (settings.fontFamily,settings.fontSize))
-
 
     # Setting finestra
     def setWindowInfo(self,settings):
@@ -110,7 +113,39 @@ class BackCor(tk.Tk):
             self.rowconfigure(i, weight = 1)
             self.columnconfigure(i, weight = 1)
 
+    # Set plot style
+    def setPlotStyle(self,data):
+        ax = self.pFrame.ax
 
+        # setting plot limits
+        l = data.ramanShift[0]
+        r = data.ramanShift[-1]
+        ax.set_xlim(l,r)
+
+        # plot grid
+        maxCount = np.amax(data.spectraData)
+        maxCount = int(math.ceil(maxCount / 1000.0) * 1000)
+        maxShift = np.amax(data.ramanShift)
+        maxShift = int(math.ceil(maxShift / 1000.0) * 1000)
+        tickLocY = int(maxCount/10)
+        tickLocX = int(maxShift/10)
+
+        ax.xaxis.set_major_locator(MultipleLocator(tickLocX))
+        ax.yaxis.set_major_locator(MultipleLocator(tickLocY))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(10))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(5))
+
+        ax.grid(which='major', color='grey', linestyle='-',alpha = 0.6)
+        ax.grid(which='minor', color='grey', linestyle=':',alpha = 0.8)
+
+        # Remove plot border
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+
+        # Plot background color
+        ax.set_facecolor("#282c34")
 
 ###############################################################################
 
@@ -125,7 +160,8 @@ class MenuBar(tk.Menu):
 
         # File
         fileMenu = tk.Menu(self,tearoff = 0)
-        fileMenu.add_command(label = "Open",command = partial(self.openFile,data,self.parent,settings))
+        fileMenu.add_command(label = "Open",command = partial(self.openFile,data,settings))
+        fileMenu.add_command(label = "Save plot",command = partial(self.savePlot,settings))
         fileMenu.add_separator()
         fileMenu.add_command(label = "Exit",command = parent.destroy)
         self.add_cascade(label = "File", menu = fileMenu)
@@ -136,17 +172,10 @@ class MenuBar(tk.Menu):
         self.add_cascade(label="Edit", menu = editMenu)
 
 
-    def openSettings(self,settings):
-        if os.path.isfile(settings.settingsFilePath):
-            call(["notepad.exe",settings.settingsFilePath])
-            tk.messagebox.showwarning(title="Warning",message="Riavvia backCor per rendere effettive le modifiche")
-        else:
-            tk.messagebox.showerror(title="Loading error",message="Settings file non trovato - (data/userData/settings.json)")
-
-    def openFile(self,data,parent,settings):
+    # Open
+    def openFile(self,data,settings):
 
         # Browse file dialog
-
         f = self.browseFile(settings)
 
         # Lettura del file
@@ -169,7 +198,6 @@ class MenuBar(tk.Menu):
 
         except:
             pass
-
     def browseFile(self,settings):
         f = tk.filedialog.askopenfilename(
             parent = self.parent,
@@ -177,7 +205,6 @@ class MenuBar(tk.Menu):
             filetype = [('data files','.wdf .txt')]
             )
         return f
-
     def loadData(self,data,f,settings):
         # pframe
         ax = self.parent.pFrame.ax
@@ -220,7 +247,7 @@ class MenuBar(tk.Menu):
                 ax.cla()
                 ax.tick_params(axis='both', colors='white',labelsize = 12)
                 ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
-                ax.set_ylabel("Counts",fontsize = 15,color = "white")
+                ax.set_ylabel("Intensity [counts]",fontsize = 15,color = "white")
             else:
                 pass
 
@@ -295,25 +322,55 @@ class MenuBar(tk.Menu):
                 # setta i default delle entry
                 minIdxSpectra.set(0)
                 maxIdxSpectra.set(data.nSpectra - 1)
+
+                colors = matplotlib.cm.rainbow(np.linspace(0, 1, 10))
+                cy = cycler('color', colors)
+                ax.set_prop_cycle(cy)
+
                 #plot spettri
                 for spectrum in spectraData:
-                    ax.plot(ramanShift,spectrum)
+                    ax.plot(ramanShift,spectrum,alpha = 0.7)
 
-
-            # setting plot limits
-            l = ramanShift[0]
-            r = ramanShift[-1]
-            ax.set_xlim(l,r)
+            self.parent.setPlotStyle(data)
 
             canvas.draw()
 
+    # Save plot
+    def savePlot(self,settings):
+
+        fig = self.parent.pFrame.fig
+
+        try:
+            f = tk.filedialog.asksaveasfile(mode = "w",
+                parent = self.parent,
+                defaultextension=".png",
+                initialdir = settings.exportPath,title = 'Save plot',
+                filetypes = [('png','*.png'),
+                             ('jpg','*.jpg'),
+                             ('jpeg','*.jpeg'),
+                             ('pdf','*.pdf'),
+                             ('svg','*.svg')]).name
+
+            fig.savefig(f,dpi = 350,pad_inches = 0.35,bbox_inches = "tight",facecolor = settings.tFrameBg)
+            tk.messagebox.showinfo("Salvataggio completato","File salvato correttamente")
+
+        except:
+            pass
+
+    # Settings
+    def openSettings(self,settings):
+        if os.path.isfile(settings.settingsFilePath):
+            call(["notepad.exe",settings.settingsFilePath])
+            tk.messagebox.showwarning(title="Warning",message="Riavvia backCor per rendere effettive le modifiche")
+        else:
+            tk.messagebox.showerror(title="Loading error",message="Settings file non trovato - (data/userData/settings.json)")
 
 ###############################################################################
 
 #PlotFrame
 class PlotFrame(ttk.Frame):
 
-    def __init__(self,parent):
+    def __init__(self,parent,settings):
         ttk.Frame.__init__(self,parent)
         self.parent = parent
 
@@ -327,11 +384,24 @@ class PlotFrame(ttk.Frame):
         ax = fig.add_subplot(111)
         ax.tick_params(axis='both', colors='white',labelsize = 12)
         ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
-        ax.set_ylabel("Counts",fontsize = 15,color = "white")
+        ax.set_ylabel("Intensity [counts]",fontsize = 15,color = "white")
+
+        ax.grid(which='major', color='grey', linestyle=':',alpha = 0.5)
+        ax.set_xticks(np.arange(0, 1050, 50))
+        ax.set_yticks(np.arange(0, 1050, 50))
+
+        # Remove plot border
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+
+        # Plot background color
+        ax.set_facecolor("#282c34")
 
 
         canvas = FigureCanvasTkAgg(fig, master = self)
-        canvas.get_tk_widget().grid(row = 0, column = 0,sticky = 'news',padx = 40, pady = 40)
+        canvas.get_tk_widget().grid(row = 0, column = 0,sticky = 'news',padx = 20, pady = 30)
         canvas.draw()
 
 
@@ -760,44 +830,42 @@ class ControlsFrame(ttk.Frame):
         self.approxModeRB2.configure(state = tk.DISABLED)
 
 
-
-
     # Plot approssimazione polinomiale + data
     def polyPlot(self,data,polyApprox):
         if data.nSpectra == 1:
             self.easyPlot(data,self.plotColor)
         else:
             self.plotNSpectra(data,self.plotColor)
-        self.ax.plot(data.ramanShift,polyApprox.spectraApprox,self.plotApproxColor)
+        self.ax.plot(data.ramanShift,polyApprox.spectraApprox,self.plotApproxColor,linewidth = 2)
         self.canvas.draw()
     # EasyPlot
     def easyPlot(self,data,color):
         self.ax.cla()
         self.ax.tick_params(axis='both', colors='white',labelsize = 12)
         self.ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
-        self.ax.set_ylabel("Counts",fontsize = 15,color = "white")
+        self.ax.set_ylabel("Intensity [counts]",fontsize = 15,color = "white")
 
         if color is None:
             self.ax.plot(data.ramanShift,data.spectraData)
         else:
             self.ax.plot(data.ramanShift,data.spectraData,color)
 
-        l = data.ramanShift[0]
-        r = data.ramanShift[-1]
-        self.ax.set_xlim(l,r)
+        self.parent.setPlotStyle(data)
+
     # PlotAll
     def plotAll(self,data,color):
         self.ax.cla()
         self.ax.tick_params(axis='both', colors='white',labelsize = 12)
         self.ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
-        self.ax.set_ylabel("Counts",fontsize = 15,color = "white")
+        self.ax.set_ylabel("Intensity [counts]",fontsize = 15,color = "white")
 
-        self.ax.plot(data.ramanShift,data.spectraData.T)
+        colors = matplotlib.cm.rainbow(np.linspace(0, 1, 10))
+        cy = cycler('color', colors)
+        self.ax.set_prop_cycle(cy)
 
-        # setting plot limits
-        l = data.ramanShift[0]
-        r = data.ramanShift[-1]
-        self.ax.set_xlim(l,r)
+        self.ax.plot(data.ramanShift,data.spectraData.T,alpha = 0.7)
+
+        self.parent.setPlotStyle(data)
     # Plot multispettrale
     def plotNSpectra(self,data,color):
 
@@ -808,7 +876,11 @@ class ControlsFrame(ttk.Frame):
         self.ax.cla()
         self.ax.tick_params(axis='both', colors='white',labelsize = 12)
         self.ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
-        self.ax.set_ylabel("Counts",fontsize = 15,color = "white")
+        self.ax.set_ylabel("Intensity [counts]",fontsize = 15,color = "white")
+        colors = matplotlib.cm.rainbow(np.linspace(0, 1, 10))
+        cy = cycler('color', colors)
+        self.ax.set_prop_cycle(cy)
+
 
         # Se non ci sono valori asseganti al range usa quelli di default
         try:
@@ -838,10 +910,7 @@ class ControlsFrame(ttk.Frame):
                     pass
 
 
-            # setting plot limits
-            l = data.ramanShift[0]
-            r = data.ramanShift[-1]
-            self.ax.set_xlim(l,r)
+            self.parent.setPlotStyle(data)
 
 
     # Back
@@ -891,7 +960,7 @@ class ControlsFrame(ttk.Frame):
                 defaultextension=".txt",
                 initialdir = self.exportPath,title = 'Save file',
                 filetypes = [('text files','*.txt')])
-            f.write("Raman Shift [1/cm]    Counts\n")
+            f.write("Raman Shift [1/cm]    Intensity [counts]\n")
 
             if cleanData.nSpectra == 1:
                 np.savetxt(f,np.c_[cleanData.ramanShift,cleanData.spectraData],fmt="%f")
