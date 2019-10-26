@@ -12,9 +12,9 @@ class SettingsReader():
         settingsFilePath = os.path.join(basePath,"data\\userData\\settings.json")
         self.settingsFilePath = settingsFilePath
 
-        self.positiveInt = ["nsLimit","minPolyOrd","maxPolyOrd","fontSize"]
+        self.positiveInt = ["nsLimit","minPolyOrd","maxPolyOrd"]
         self.positiveFloat = ["minThrVal","maxThrVal"]
-        self.colors = ["fontColor","plotColor","plotSelectedColor",
+        self.colors = ["plotColor","plotSelectedColor",
                   "plotApproxColor","tFrameBg","controlsTFrameBg",
                   "tLabelBg","tLabelFg"]
 
@@ -72,8 +72,6 @@ class SettingsReader():
 
                 # Style
                 # -- Font
-                j["fontSize"] = data['settings']['style']['font']['fontSize']
-                j["fontColor"] = data['settings']['style']['font']['fontColor']
                 # -- Plot
                 j["plotColor"] = data['settings']['style']['plot']['plotColor']
                 j["plotSelectedColor"] = data['settings']['style']['plot']['plotSelectedColor']
