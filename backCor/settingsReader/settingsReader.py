@@ -12,6 +12,13 @@ class SettingsReader():
         settingsFilePath = os.path.join(basePath,"data\\userData\\settings.json")
         self.settingsFilePath = settingsFilePath
 
+        self.positiveInt = ["nsLimit","minPolyOrd","maxPolyOrd","fontSize"]
+        self.positiveFloat = ["minThrVal","maxThrVal"]
+        self.colors = ["fontColor","plotColor","plotSelectedColor",
+                  "plotApproxColor","tFrameBg","controlsTFrameBg",
+                  "tLabelBg","tLabelFg"]
+
+
         # Setting valori di default
         self.setDefault()
 
@@ -19,77 +26,63 @@ class SettingsReader():
         j = self.readJson(settingsFilePath)
 
         # Check e loading user settings
-        try:
-            self.editSettings(j)
-        except:
-            pass
+        self.editSettings(j)
+
 
 
     def printSettings(self):
         for attr,val in self.__dict__.items():
             print(attr,": ",val)
 
-    def editSettings(self,j):
-        for idx,attr in enumerate(self.__dict__.items()):
-            #  i primi 4 attributi sono i path
-            if idx > 3:
-                if self.checkVal(attr[1],j[idx-4]):
-                    setattr(self,attr[0],j[idx-4])
 
-    def checkVal(self,default,value):
+    def editSettings(self,j):
+        for attr,val in self.__dict__.items():
+            if self.checkVal(attr,j):
+                setattr(self,attr,j[attr])
+
+
+    def checkVal(self,attr,j):
         f = False
-        # controllo sul tipo
-        if type(value) == type(default):
-            # Controllo colore valido
-            if type(value) is str:
-                if is_color_like(value):
-                    f = True
-            # Controllo Float valido
-            elif type(value) is float:
-                if 0.01 <= value <= 0.1:
-                    f = True
-            # Controllo int valido
-            elif type(value) is int:
-                # Int pos
-                if default >= 0 :
-                    if value >= 0:
-                        f = True
-                # Int neg
-                else:
-                    if value < 0:
-                        f = True
+
+        if attr in self.positiveInt:
+            if j[attr] > 0: f = True
+        elif attr in self.positiveFloat:
+            if 0.01 <= j[attr] <= 0.1: f = True
+        elif attr in self.colors:
+            if is_color_like(j[attr]): f = True
+
         return f
+
 
     def readJson(self,settingsFilePath):
         # Lettura seettings.json e aggiornamento settings se i valori sono validi
-        j = []
+        j = {}
         try:
             with open(settingsFilePath) as f:
                 data = json.load(f)
 
                 # Controls
-                j.append(data['settings']['controls']['nsLimit'])
-                j.append(data['settings']['controls']['polyOrd']['min'])
-                j.append(data['settings']['controls']['polyOrd']['max'])
-                j.append(data['settings']['controls']['thrVal']['min'])
-                j.append(data['settings']['controls']['thrVal']['max'])
-                j.append(data['settings']['controls']['cntsAdj']['min'])
-                j.append(data['settings']['controls']['cntsAdj']['max'])
+                j["nsLimit"] = data['settings']['controls']['nsLimit']
+                j["minPolyOrd"] = data['settings']['controls']['polyOrd']['min']
+                j["maxPolyOrd"] = data['settings']['controls']['polyOrd']['max']
+                j["minThrVal"] = data['settings']['controls']['thrVal']['min']
+                j["maxThrVal"] = data['settings']['controls']['thrVal']['max']
+                j["minCntsAdj"] = data['settings']['controls']['cntsAdj']['min']
+                j["maxThrVal"] = data['settings']['controls']['cntsAdj']['max']
 
                 # Style
                 # -- Font
-                j.append(data['settings']['style']['font']['fontFamily'])
-                j.append(data['settings']['style']['font']['fontSize'])
-                j.append(data['settings']['style']['font']['fontColor'])
+                j["fontSize"] = data['settings']['style']['font']['fontSize']
+                j["fontColor"] = data['settings']['style']['font']['fontColor']
                 # -- Plot
-                j.append(data['settings']['style']['plot']['plotColor'])
-                j.append(data['settings']['style']['plot']['plotSelectedColor'])
-                j.append(data['settings']['style']['plot']['plotApproxColor'])
+                j["plotColor"] = data['settings']['style']['plot']['plotColor']
+                j["plotSelectedColor"] = data['settings']['style']['plot']['plotSelectedColor']
+                j["plotApproxColor"] = data['settings']['style']['plot']['plotApproxColor']
                 # -- Appearance
-                j.append(data['settings']['style']['appearance']['tFrame']['bg'])
-                j.append(data['settings']['style']['appearance']['controlsTFrame']['bg'])
-                j.append(data['settings']['style']['appearance']['tLabel']['bg'])
-                j.append(data['settings']['style']['appearance']['tLabel']['fg'])
+                j["tFrameBg"] = data['settings']['style']['appearance']['tFrame']['bg']
+                j["controlsTFrameBg"] = data['settings']['style']['appearance']['controlsTFrame']['bg']
+                j["tLabelBg"] = data['settings']['style']['appearance']['tLabel']['bg']
+                j["tLabelFg"] = data['settings']['style']['appearance']['tLabel']['fg']
         except:
             pass
 
@@ -102,7 +95,7 @@ class SettingsReader():
         self.exportPath = self.basePath
 
         # Default settings
-        self.nsLimit = 6
+        self.nsLimit = 5
         self.minPolyOrd = 1
         self.maxPolyOrd = 15
         self.minThrVal = 0.01
@@ -117,8 +110,8 @@ class SettingsReader():
         self.fontColor = "white"
         # -- Plot
         self.plotColor = "#4169e1"
-        self.plotSelectedColor = "#ffc445"
-        self.plotApproxColor = "#ff6745"
+        self.plotSelectedColor = "mediumspringgreen"
+        self.plotApproxColor = "deeppink"
         # -- Appearance
         self.tFrameBg = "#21252b"
         self.controlsTFrameBg = "#282c34"

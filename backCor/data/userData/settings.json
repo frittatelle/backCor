@@ -1,7 +1,7 @@
 {
   "settings":{
     "controls":{
-        "nsLimit": 11,
+        "nsLimit": 10,
         "polyOrd":{
           "min": 3,
           "max": 15
@@ -19,11 +19,10 @@
     "style":{
       "plot":{
         "plotColor": "#4169e1",
-        "plotSelectedColor": "#ffc445",
-        "plotApproxColor": "#ff6745"
+        "plotSelectedColor": "mediumspringgreen",
+        "plotApproxColor": "deeppink"
       },
       "font":{
-        "fontFamily": "Poppins",
         "fontSize":11,
         "fontColor":"white"
       },
