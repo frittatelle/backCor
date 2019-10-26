@@ -19,8 +19,8 @@
     "style":{
       "plot":{
         "plotColor": "#4169e1",
-        "plotSelectedColor": "#ffc445",
-        "plotApproxColor": "#ff6745"
+        "plotSelectedColor": "mediumspringgreen",
+        "plotApproxColor": "deeppink"
       },
       "font":{
         "fontSize":11,

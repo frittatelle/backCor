@@ -110,8 +110,8 @@ class SettingsReader():
         self.fontColor = "white"
         # -- Plot
         self.plotColor = "#4169e1"
-        self.plotSelectedColor = "#ffc445"
-        self.plotApproxColor = "#ff6745"
+        self.plotSelectedColor = "mediumspringgreen"
+        self.plotApproxColor = "deeppink"
         # -- Appearance
         self.tFrameBg = "#21252b"
         self.controlsTFrameBg = "#282c34"
