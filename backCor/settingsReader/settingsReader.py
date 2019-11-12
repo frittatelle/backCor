@@ -13,6 +13,7 @@ class SettingsReader():
         self.settingsFilePath = settingsFilePath
 
         self.positiveInt = ["nsLimit","minPolyOrd","maxPolyOrd"]
+        self.negativeInt = ["minCntsAdj","maxCntsAdj"]
         self.positiveFloat = ["minThrVal","maxThrVal"]
         self.colors = ["plotColor","plotSelectedColor",
                   "plotApproxColor","tFrameBg","controlsTFrameBg",
@@ -46,6 +47,8 @@ class SettingsReader():
 
         if attr in self.positiveInt:
             if j[attr] > 0: f = True
+        elif attr in self.negativeInt:
+            f = True
         elif attr in self.positiveFloat:
             if 0.01 <= j[attr] <= 0.1: f = True
         elif attr in self.colors:
@@ -68,7 +71,7 @@ class SettingsReader():
                 j["minThrVal"] = data['settings']['controls']['thrVal']['min']
                 j["maxThrVal"] = data['settings']['controls']['thrVal']['max']
                 j["minCntsAdj"] = data['settings']['controls']['cntsAdj']['min']
-                j["maxThrVal"] = data['settings']['controls']['cntsAdj']['max']
+                j["maxCntsAdj"] = data['settings']['controls']['cntsAdj']['max']
 
                 # Style
                 # -- Font
