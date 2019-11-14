@@ -433,7 +433,31 @@ class MenuBar(tk.Menu):
 
     # Export controls settings
     def exportControlsSettings(self,settings):
-        pass
+        try:
+            f = tk.filedialog.asksaveasfile(mode = "w",
+                parent = self.parent,
+                defaultextension=".txt",
+                initialdir = settings.exportPath,title = 'Save Control Settings',
+                filetypes = [('text files','*.txt')])
+            f.write("OriginalFileName  CostFunction  PolynomialOrder  Threshold  CountsAdjust\n")
+
+            originalFileName = self.parent.title().replace("backCor - ","")
+            costFunVal = self.parent.cFrame.costFunVal.get()
+            polyOrd = self.parent.cFrame.polyOrdVal.get()
+            thrVal = self.parent.cFrame.thrVal.get()
+            cntsAdj = self.parent.cFrame.cntVal.get()
+
+            f.write(originalFileName + "  " +
+                    costFunVal + "  " +
+                    str(polyOrd) + "  " +
+                    str(thrVal) + "  " +
+                    str(cntsAdj))
+
+            f.close()
+
+            tk.messagebox.showinfo("Salvataggio completato","File salvato correttamente")
+        except:
+            pass
 
 
     # Save plot
@@ -1067,6 +1091,8 @@ class ControlsFrame(ttk.Frame):
                 np.savetxt(f,np.c_[cleanData.ramanShift,cleanData.spectraData],fmt="%f")
             else:
                 np.savetxt(f,np.c_[cleanData.ramanShift,cleanData.spectraData.T],fmt="%f")
+
+            f.close()
 
             tk.messagebox.showinfo("Salvataggio completato","File salvato correttamente")
         except:
