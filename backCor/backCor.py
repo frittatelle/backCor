@@ -463,6 +463,7 @@ class MenuBar(tk.Menu):
     def savePlot(self,settings):
 
         fig = self.parent.pFrame.fig
+        ax = self.parent.pFrame.ax
 
         try:
             f = tk.filedialog.asksaveasfile(mode = "w",
@@ -475,7 +476,20 @@ class MenuBar(tk.Menu):
                              ('pdf','*.pdf'),
                              ('svg','*.svg')]).name
 
-            fig.savefig(f,dpi = 350,pad_inches = 0.35,bbox_inches = "tight",facecolor = settings.tFrameBg)
+            # Skins
+            if settings.skin == "white":
+                ax.set_facecolor("white")
+                ax.tick_params(axis='both', colors=settings.tFrameBg,labelsize = 12)
+                ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = settings.tFrameBg)
+                ax.set_ylabel("Intensity [counts]",fontsize = 15,color = settings.tFrameBg)
+                fig.savefig(f,dpi = 350,pad_inches = 0.35,bbox_inches = "tight",facecolor = "white")
+            elif settings.skin == "dark":
+                ax.set_facecolor(settings.tFrameBg)
+                ax.tick_params(axis='both', colors="white",labelsize = 12)
+                ax.set_xlabel("Raman Shift [1/cm]",fontsize = 15,color = "white")
+                ax.set_ylabel("Intensity [counts]",fontsize = 15,color = "white")
+                fig.savefig(f,dpi = 350,pad_inches = 0.35,bbox_inches = "tight",facecolor = settings.tFrameBg)
+
             tk.messagebox.showinfo("Salvataggio completato","File salvato correttamente")
 
         except:

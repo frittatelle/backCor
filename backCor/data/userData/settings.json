@@ -4,15 +4,15 @@
         "nsLimit": 10,
         "polyOrd":{
           "min": 3,
-          "max": 15
+          "max": 10
         },
         "thrVal":{
           "min": 0.01,
           "max": 0.1
         },
         "cntsAdj":{
-          "min": -300,
-          "max": 0
+          "min": -200,
+          "max": 100
         }
     },
 
@@ -33,6 +33,9 @@
           "bg": "#282c34",
           "fg": "white"
         }
+      },
+      "savePlot":{
+        "skin": "dark"
       }
     }
   }

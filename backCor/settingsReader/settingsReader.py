@@ -19,6 +19,7 @@ class UserSettingsReader():
         self.colors = ["plotColor","plotSelectedColor",
                   "plotApproxColor","tFrameBg","controlsTFrameBg",
                   "tLabelBg","tLabelFg"]
+        self.other = ["skin"]
 
 
         # Setting valori di default
@@ -54,6 +55,10 @@ class UserSettingsReader():
             if 0.01 <= j[attr] <= 0.1: f = True
         elif attr in self.colors:
             if is_color_like(j[attr]): f = True
+        elif attr in self.other:
+            skins = ["dark","white"]
+            if j[attr] in skins:
+                f = True
 
         return f
 
@@ -75,7 +80,6 @@ class UserSettingsReader():
                 j["maxCntsAdj"] = data['settings']['controls']['cntsAdj']['max']
 
                 # Style
-                # -- Font
                 # -- Plot
                 j["plotColor"] = data['settings']['style']['plot']['plotColor']
                 j["plotSelectedColor"] = data['settings']['style']['plot']['plotSelectedColor']
@@ -85,6 +89,7 @@ class UserSettingsReader():
                 j["controlsTFrameBg"] = data['settings']['style']['appearance']['controlsTFrame']['bg']
                 j["tLabelBg"] = data['settings']['style']['appearance']['tLabel']['bg']
                 j["tLabelFg"] = data['settings']['style']['appearance']['tLabel']['fg']
+                j["skin"] = data['settings']['style']['savePlot']['skin']
         except:
             pass
 
@@ -119,6 +124,8 @@ class UserSettingsReader():
         self.controlsTFrameBg = "#282c34"
         self.tLabelBg = "#282c34"
         self.tLabelFg = "white"
+        #  -- savePlotSkin
+        self.skin = "dark"
 
 class ControlsSettingsReader():
     def __init__(self,fileName,settings):
