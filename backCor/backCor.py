@@ -205,7 +205,7 @@ class MenuBar(tk.Menu):
         f = tk.filedialog.askopenfilename(
             parent = self.parent,
             initialdir = settings.favFolderPath,title = 'Choose file',
-            filetype = [('data files','.wdf .txt')]
+            filetype = [('data files','.wdf .txt .dat')]
             )
         return f
     def loadData(self,data,f,settings):

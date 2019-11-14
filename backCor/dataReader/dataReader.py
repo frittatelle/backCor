@@ -30,10 +30,21 @@ class DataReader():
                         self.spectraData = np.fliplr(self.spectraData)
 
 
-        elif fileName.endswith(".txt"):
+        elif fileName.endswith(".txt") or fileName.endswith(".dat"):
+
+            # Se c`e' la virgola al posto del punto swap
+            with open(fileName, 'r+') as f:
+                text = f.read()
+                f.seek(0)
+                f.truncate()
+                f.write(text.replace(",","."))
+
+
             # Txt reader
             txtr = np.loadtxt(fileName, dtype = "float",skiprows = 1, unpack=True)
             if txtr is not None:
+
+                # Lettura dati
                 self.ramanShift = txtr[0]
                 self.pointsPerSpectrum = len(txtr[0])
                 if len(txtr) == 2:
