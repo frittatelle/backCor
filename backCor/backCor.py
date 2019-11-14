@@ -184,7 +184,6 @@ class MenuBar(tk.Menu):
         # Lettura del file
         try:
             dataR = DataReader(fileName = f)
-
             if dataR is None:
                 tk.messagebox.showerror(title="Reading error",message="Il file non e' stato letto correttamente")
             else:
@@ -201,6 +200,7 @@ class MenuBar(tk.Menu):
 
         except:
             pass
+
     def browseFile(self,settings):
         f = tk.filedialog.askopenfilename(
             parent = self.parent,
@@ -323,8 +323,8 @@ class MenuBar(tk.Menu):
                 approxModeRB2.configure(state = tk.DISABLED)
 
                 # setta i default delle entry
-                minIdxSpectra.set(0)
-                maxIdxSpectra.set(data.nSpectra - 1)
+                minIdxSpectra.set(1)
+                maxIdxSpectra.set(data.nSpectra)
 
                 colors = matplotlib.cm.rainbow(np.linspace(0, 1, 10))
                 cy = cycler('color', colors)
@@ -361,7 +361,7 @@ class MenuBar(tk.Menu):
                     for attr,val in csr.valid.items():
                         if val == False:
                             invalidMsg = invalidMsg + attr + " non valido\n"
-                    tk.messagebox.showerror(title="Value error",message = invalidMsg + "Impossibile caricare le impostazioni: file corrotto")
+                    tk.messagebox.showerror(title="Value error",message = invalidMsg + "Impossibile caricare le impostazioni: file corrotto o illeggibile")
 
                 else:
                     # Ciclo sugli attributi validi (compatibili e incompatibili)
@@ -757,7 +757,7 @@ class ControlsFrame(ttk.Frame):
         valid = val.isdigit()
 
         if valid:
-            valid = int(val) < data.nSpectra
+            valid = int(val) <= data.nSpectra
 
         # rimozione 0 iniziale
         if not val:
@@ -770,12 +770,12 @@ class ControlsFrame(ttk.Frame):
         try:
             min = self.minIdxSpectra.get()
         except:
-            min = 0
+            min = 1
 
         try:
             max = self.maxIdxSpectra.get()
         except:
-            max = 1
+            max = 2
 
         valid = min < max
 
@@ -907,10 +907,12 @@ class ControlsFrame(ttk.Frame):
         cleanData.nSpectra = data.nSpectra
         expMode = self.expMode.get()
         apxMode = self.approxMode.get()
+        shift = self.cntVal.get()
         # 1 or more spectra and exportMode
         if data.nSpectra == 1:
             polyApprox = PolyApprox(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get())
             polyApprox.approx()
+            polyApprox.spectraApprox = polyApprox.spectraApprox + shift
             cleanData.spectraData = data.spectraData - polyApprox.spectraApprox
             self.easyPlot(cleanData,self.plotColor)
         else:
@@ -918,18 +920,21 @@ class ControlsFrame(ttk.Frame):
                 if expMode == "Single":
                     polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
                     polyApprox.approx()
+                    polyApprox.spectraApprox = polyApprox.spectraApprox + shift
                     cleanData.spectraData = data.spectraData[self.selectedIdx.get()] - polyApprox.spectraApprox
                     self.easyPlot(cleanData,self.plotColor)
 
                 elif expMode == "All":
                     polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
                     polyApprox.approx()
+                    polyApprox.spectraApprox = polyApprox.spectraApprox + shift
                     cleanData.spectraData = data.spectraData - polyApprox.spectraApprox
                     self.plotAll(cleanData,self.plotColor)
 
                 elif expMode == "View":
                     polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
                     polyApprox.approx()
+                    polyApprox.spectraApprox = polyApprox.spectraApprox + shift
                     cleanData.spectraData = data.spectraData - polyApprox.spectraApprox
                     self.plotNSpectra(cleanData,None)
 
@@ -937,12 +942,14 @@ class ControlsFrame(ttk.Frame):
                 if expMode == "All":
                     polyApprox = PolyApproxMulti(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),0,data.nSpectra)
                     polyApprox.approx()
+                    polyApprox.spectraApprox = polyApprox.spectraApprox + shift
                     cleanData.spectraData = data.spectraData - polyApprox.spectraApprox.T
                     self.plotAll(cleanData,self.plotColor)
 
                 elif expMode == "View":
                     polyApprox = PolyApproxMulti(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.minIdxSpectra.get(),self.maxIdxSpectra.get())
                     polyApprox.approx()
+                    polyApprox.spectraApprox = polyApprox.spectraApprox + shift
                     cleanData.spectraData = data.spectraData[self.minIdxSpectra.get():self.maxIdxSpectra.get()+1] - polyApprox.spectraApprox.T
                     self.plotAll(cleanData,self.plotColor)
 
@@ -1024,16 +1031,16 @@ class ControlsFrame(ttk.Frame):
         try:
             rangeMin = self.minIdxSpectra.get()
         except:
-            rangeMin = 0
+            rangeMin = 1
         try:
             rangeMax = self.maxIdxSpectra.get()
         except:
-            rangeMax = 1
+            rangeMax = 2
 
         # plot degli spettri nel range indicato
         if not self.ax.lines:
 
-            for i in range(rangeMin,rangeMax + 1):
+            for i in range(rangeMin - 1,rangeMax):
                 try:
                     # Se sono in fase di selezione o visualizzazione
                     if color is None:
