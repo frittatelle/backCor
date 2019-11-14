@@ -1,0 +1,2 @@
+OriginalFileName  CostFunction  PolynomialOrder  Threshold  CountsAdjust
+test.txt  Symmetric Huber function  10  0.02  -400

@@ -1,8 +1,9 @@
 import os as os
 import json
+import numpy as np
 from matplotlib.colors import is_color_like
 
-class SettingsReader():
+class UserSettingsReader():
 
     def __init__(self):
 
@@ -118,3 +119,95 @@ class SettingsReader():
         self.controlsTFrameBg = "#282c34"
         self.tLabelBg = "#282c34"
         self.tLabelFg = "white"
+
+class ControlsSettingsReader():
+    def __init__(self,fileName,settings):
+
+        self.costFunctions = ["Symmetric Huber function",
+                              "Asymmetric Huber function",
+                              "Symmetric truncated quadratic",
+                              "Asymmetric truncated quadratic"]
+
+        self.valid = {}
+        self.override = {}
+
+        self.valid["OriginalFileName"] = True
+        self.override["OriginalFileName"] = True
+        self.valid["CostFunction"] = False
+        self.override["CostFunction"] = False
+        self.valid["polyOrd"] = False
+        self.override["polyOrd"] = False
+        self.valid["thrVal"] = False
+        self.override["thrVal"] = False
+        self.valid["cntsAdj"] = False
+        self.override["cntsAdj"] = False
+
+
+        txtr = np.loadtxt(fileName,dtype="str",skiprows = 1,unpack=True,delimiter="  ")
+        if txtr is not None:
+
+            self.originalFileName = txtr[0]
+            self.costFunVal = txtr[1]
+            self.polyOrd = txtr[2]
+            self.thrVal = txtr[3]
+            self.cntsAdj = txtr[4]
+
+
+
+
+
+            # Cost function
+            if self.costFunVal not in self.costFunctions:
+                self.valid["CostFunction"] = False
+                self.override["CostFunction"] = False
+            else:
+                self.valid["CostFunction"] = True
+                self.override["CostFunction"] = True
+
+
+            #  Polynomial Order
+            try:
+                self.polyOrd = int(self.polyOrd)
+            except:
+                self.valid["polyOrd"] = False
+
+
+            if isinstance(self.polyOrd,int) and self.polyOrd > 0:
+                self.valid["polyOrd"] = True
+                if settings.minPolyOrd <= self.polyOrd <= settings.maxPolyOrd:
+                    self.override["polyOrd"] = True
+
+
+            # Threshold
+            try:
+                self.thrVal = float(self.thrVal)
+            except:
+                self.valid["thrVal"] = False
+            if isinstance(self.thrVal,float) and 0.01 <= self.thrVal <= 0.1:
+                self.valid["thrVal"] = True
+                if settings.minThrVal <= self.thrVal <= settings.maxThrVal:
+                    self.override["thrVal"] = True
+
+
+            # CountsAdjust
+            try:
+                self.cntsAdj = int(self.cntsAdj)
+                self.valid["cntsAdj"] = True
+            except:
+                self.valid["cntsAdj"] = False
+            if self.valid["cntsAdj"] :
+                if isinstance(self.cntsAdj,int) and settings.minCntsAdj <= self.cntsAdj <= settings.maxCntsAdj:
+                    self.override["cntsAdj"] = True
+
+
+        else:
+            return None
+
+
+
+
+    def printAll(self):
+        print("Valid")
+        print(self.valid)
+        print("\n\nOverride")
+        print(self.override)
