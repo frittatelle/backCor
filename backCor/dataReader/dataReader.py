@@ -14,6 +14,22 @@ class DataReader():
                 self.spectraData = self.processSpectra(wdfr)
                 self.ramanShift = self.processramanShift(wdfr)
 
+                # nSpectra
+                if len(self.spectraData) == self.pointsPerSpectrum:
+                    nSpectra = 1
+                else:
+                    nSpectra = len(self.spectraData)
+
+                # Mantiene un ordine corretto (alcuni file hanno lo shift al contrario)
+                if self.ramanShift[1] < self.ramanShift[0]:
+                    self.ramanShift = np.flipud(self.ramanShift)
+
+                    if nSpectra == 1:
+                        self.spectraData = np.flipud(self.spectraData)
+                    else:
+                        self.spectraData = np.fliplr(self.spectraData)
+
+
         elif fileName.endswith(".txt"):
             # Txt reader
             txtr = np.loadtxt(fileName, dtype = "float",skiprows = 1, unpack=True)
@@ -24,6 +40,21 @@ class DataReader():
                     self.spectraData = txtr[1]
                 else:
                     self.spectraData = txtr[1:]
+
+                # nSpectra
+                if len(self.spectraData) == self.pointsPerSpectrum:
+                    nSpectra = 1
+                else:
+                    nSpectra = len(self.spectraData)
+
+                # Mantiene un ordine corretto (alcuni file hanno lo shift al contrario)
+                if self.ramanShift[1] < self.ramanShift[0]:
+                    self.ramanShift = np.flipud(self.ramanShift)
+
+                    if nSpectra == 1:
+                        self.spectraData = np.flipud(self.spectraData)
+                    else:
+                        self.spectraData = np.fliplr(self.spectraData)
 
 
         else:
