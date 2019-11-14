@@ -143,7 +143,7 @@ class ControlsSettingsReader():
         self.override["cntsAdj"] = False
 
 
-        txtr = np.loadtxt(fileName,dtype="str",skiprows = 1,unpack=True,delimiter="  ")
+        txtr = np.loadtxt(fileName,dtype="str",skiprows = 1,unpack=True,delimiter=" | ")
         if txtr is not None:
 
             self.originalFileName = txtr[0]
@@ -191,23 +191,14 @@ class ControlsSettingsReader():
 
             # CountsAdjust
             try:
-                self.cntsAdj = int(self.cntsAdj)
+                self.cntsAdj = float(self.cntsAdj)
                 self.valid["cntsAdj"] = True
             except:
                 self.valid["cntsAdj"] = False
             if self.valid["cntsAdj"] :
-                if isinstance(self.cntsAdj,int) and settings.minCntsAdj <= self.cntsAdj <= settings.maxCntsAdj:
+                if isinstance(self.cntsAdj,float) and settings.minCntsAdj <= self.cntsAdj <= settings.maxCntsAdj:
                     self.override["cntsAdj"] = True
 
 
         else:
             return None
-
-
-
-
-    def printAll(self):
-        print("Valid")
-        print(self.valid)
-        print("\n\nOverride")
-        print(self.override)

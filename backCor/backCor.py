@@ -346,74 +346,73 @@ class MenuBar(tk.Menu):
             filetype = [('controls Settings','.txt')]
             )
 
-        csr = ControlsSettingsReader(f,settings)
-        if csr is None:
-            tk.messagebox.showerror(title="Reading error",message="Il file non e' stato letto correttamente")
-        else:
-            # csr.printAll()
-
-            invalidMsg = ""
-            incompatibleMsg = ""
-            invalidFlag = False in csr.valid.values()
-            incompatibleFlag = False in csr.override.values()
-            updateFlag = not invalidFlag and not incompatibleFlag
-
-            if invalidFlag:
-                for attr,val in csr.valid.items():
-                    if val == False:
-                        invalidMsg = invalidMsg + attr + " non valido\n"
-                tk.messagebox.showerror(title="Value error",message = invalidMsg + "Impossibile caricare le impostazioni: file corrotto")
-
+        try:
+            csr = ControlsSettingsReader(f,settings)
+            if csr is None:
+                tk.messagebox.showerror(title="Reading error",message="Il file non e' stato letto correttamente")
             else:
-                # Ciclo sugli attributi validi (compatibili e incompatibili)
-                # Stampa quelli incompatibili
-                for attr,val in csr.override.items():
-                    if csr.override[attr] == False:
-                        if attr == "OriginalFileName":
-                            pass
+                invalidMsg = ""
+                incompatibleMsg = ""
+                invalidFlag = False in csr.valid.values()
+                incompatibleFlag = False in csr.override.values()
+                updateFlag = not invalidFlag and not incompatibleFlag
+
+                if invalidFlag:
+                    for attr,val in csr.valid.items():
+                        if val == False:
+                            invalidMsg = invalidMsg + attr + " non valido\n"
+                    tk.messagebox.showerror(title="Value error",message = invalidMsg + "Impossibile caricare le impostazioni: file corrotto")
+
+                else:
+                    # Ciclo sugli attributi validi (compatibili e incompatibili)
+                    # Stampa quelli incompatibili
+                    for attr,val in csr.override.items():
+                        if csr.override[attr] == False:
+                            if attr == "OriginalFileName":
+                                pass
+                            else:
+                                incompatibleMsg = self.calcIncompMsg(incompatibleMsg,csr,settings,attr)
+
+                    # Chiede all'utente se cambiare le impostazioni accordingly
+                    question = "Cambiare le impostazioni utente provvisoriamente per caricare il file?\n"
+                    if incompatibleFlag:
+                        res = tk.messagebox.askyesno("Warning",message = incompatibleMsg + "\n" +question)
+                        if res:
+                            updateFlag = True
                         else:
-                            incompatibleMsg = self.calcIncompMsg(incompatibleMsg,csr,settings,attr)
+                            pass
 
-                # Chiede all'utente se cambiare le impostazioni accordingly
-                question = "Cambiare le impostazioni utente provvisoriamente per caricare il file?\n"
-                if incompatibleFlag:
-                    res = tk.messagebox.askyesno("Warning",message = incompatibleMsg + "\n" +question)
-                    if res:
-                        updateFlag = True
-                    else:
-                        pass
+                    # Se e' possibile fare l'update lo esegue
+                    if updateFlag:
 
-                # Se e' possibile fare l'update lo esegue
-                if updateFlag:
+                        # Settings new limit if it is the case
 
-                    # Settings new limit if it is the case
+                        # PolyOrd
+                        if csr.polyOrd < settings.minPolyOrd:
+                            self.parent.cFrame.polyOrdSlider.configure(from_ = csr.polyOrd)
+                        elif csr.polyOrd > settings.maxPolyOrd:
+                            self.parent.cFrame.polyOrdSlider.configure(to = csr.polyOrd)
 
-                    # PolyOrd
-                    if csr.polyOrd < settings.minPolyOrd:
-                        self.parent.cFrame.polyOrdSlider.configure(from_ = csr.polyOrd)
-                    elif csr.polyOrd > settings.maxPolyOrd:
-                        self.parent.cFrame.polyOrdSlider.configure(to = csr.polyOrd)
+                        # Threshold
+                        if csr.thrVal < settings.minThrVal:
+                            self.parent.cFrame.thrSlider.configure(from_ = csr.thrVal)
+                        elif csr.thrVal > settings.maxThrVal:
+                            self.parent.cFrame.thrSlider.configure(to = csr.thrVal)
 
-                    # Threshold
-                    if csr.thrVal < settings.minThrVal:
-                        self.parent.cFrame.thrSlider.configure(from_ = csr.thrVal)
-                    elif csr.thrVal > settings.maxThrVal:
-                        self.parent.cFrame.thrSlider.configure(to = csr.thrVal)
-
-                    # CountsAdjust
-                    if csr.cntsAdj < settings.minCntsAdj:
-                        self.parent.cFrame.cntSlider.configure(from_ = csr.cntsAdj)
-                    elif csr.cntsAdj > settings.maxCntsAdj:
-                        self.parent.cFrame.cntSlider.configure(to = csr.cntsAdj)
+                        # CountsAdjust
+                        if csr.cntsAdj < settings.minCntsAdj:
+                            self.parent.cFrame.cntSlider.configure(from_ = csr.cntsAdj)
+                        elif csr.cntsAdj > settings.maxCntsAdj:
+                            self.parent.cFrame.cntSlider.configure(to = csr.cntsAdj)
 
 
-                    # Set values
-                    self.parent.cFrame.costFunVal.set(csr.costFunVal)
-                    self.parent.cFrame.polyOrdSlider.set(csr.polyOrd)
-                    self.parent.cFrame.thrSlider.set(csr.thrVal)
-                    self.parent.cFrame.cntSlider.set(csr.cntsAdj)
-
-
+                        # Set values
+                        self.parent.cFrame.costFunVal.set(csr.costFunVal)
+                        self.parent.cFrame.polyOrdSlider.set(csr.polyOrd)
+                        self.parent.cFrame.thrSlider.set(csr.thrVal)
+                        self.parent.cFrame.cntSlider.set(csr.cntsAdj)
+        except:
+            pass
 
     # Elenco incompatibili
     def calcIncompMsg(self,incompatibleMsg,csr,settings,attr):
@@ -439,18 +438,19 @@ class MenuBar(tk.Menu):
                 defaultextension=".txt",
                 initialdir = settings.exportPath,title = 'Save Control Settings',
                 filetypes = [('text files','*.txt')])
-            f.write("OriginalFileName  CostFunction  PolynomialOrder  Threshold  CountsAdjust\n")
+            f.write("OriginalFileName | CostFunction | PolynomialOrder | Threshold | CountsAdjust\n")
 
             originalFileName = self.parent.title().replace("backCor - ","")
+
             costFunVal = self.parent.cFrame.costFunVal.get()
             polyOrd = self.parent.cFrame.polyOrdVal.get()
             thrVal = self.parent.cFrame.thrVal.get()
             cntsAdj = self.parent.cFrame.cntVal.get()
 
-            f.write(originalFileName + "  " +
-                    costFunVal + "  " +
-                    str(polyOrd) + "  " +
-                    str(thrVal) + "  " +
+            f.write(originalFileName + " | " +
+                    costFunVal + " | " +
+                    str(polyOrd) + " | " +
+                    str(thrVal) + " | " +
                     str(cntsAdj))
 
             f.close()
@@ -458,7 +458,6 @@ class MenuBar(tk.Menu):
             tk.messagebox.showinfo("Salvataggio completato","File salvato correttamente")
         except:
             pass
-
 
     # Save plot
     def savePlot(self,settings):
