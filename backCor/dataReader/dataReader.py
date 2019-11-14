@@ -14,16 +14,58 @@ class DataReader():
                 self.spectraData = self.processSpectra(wdfr)
                 self.ramanShift = self.processramanShift(wdfr)
 
-        elif fileName.endswith(".txt"):
+                # nSpectra
+                if len(self.spectraData) == self.pointsPerSpectrum:
+                    nSpectra = 1
+                else:
+                    nSpectra = len(self.spectraData)
+
+                # Mantiene un ordine corretto (alcuni file hanno lo shift al contrario)
+                if self.ramanShift[1] < self.ramanShift[0]:
+                    self.ramanShift = np.flipud(self.ramanShift)
+
+                    if nSpectra == 1:
+                        self.spectraData = np.flipud(self.spectraData)
+                    else:
+                        self.spectraData = np.fliplr(self.spectraData)
+
+
+        elif fileName.endswith(".txt") or fileName.endswith(".dat"):
+
+            # Se c`e' la virgola al posto del punto swap
+            with open(fileName, 'r+') as f:
+                text = f.read()
+                f.seek(0)
+                f.truncate()
+                f.write(text.replace(",","."))
+
+
             # Txt reader
             txtr = np.loadtxt(fileName, dtype = "float",skiprows = 1, unpack=True)
             if txtr is not None:
+
+                # Lettura dati
                 self.ramanShift = txtr[0]
                 self.pointsPerSpectrum = len(txtr[0])
                 if len(txtr) == 2:
                     self.spectraData = txtr[1]
                 else:
                     self.spectraData = txtr[1:]
+
+                # nSpectra
+                if len(self.spectraData) == self.pointsPerSpectrum:
+                    nSpectra = 1
+                else:
+                    nSpectra = len(self.spectraData)
+
+                # Mantiene un ordine corretto (alcuni file hanno lo shift al contrario)
+                if self.ramanShift[1] < self.ramanShift[0]:
+                    self.ramanShift = np.flipud(self.ramanShift)
+
+                    if nSpectra == 1:
+                        self.spectraData = np.flipud(self.spectraData)
+                    else:
+                        self.spectraData = np.fliplr(self.spectraData)
 
 
         else:
