@@ -323,8 +323,8 @@ class MenuBar(tk.Menu):
                 approxModeRB2.configure(state = tk.DISABLED)
 
                 # setta i default delle entry
-                minIdxSpectra.set(1)
-                maxIdxSpectra.set(data.nSpectra)
+                minIdxSpectra.set(0)
+                maxIdxSpectra.set(data.nSpectra - 1)
 
                 colors = matplotlib.cm.rainbow(np.linspace(0, 1, 10))
                 cy = cycler('color', colors)
@@ -757,7 +757,7 @@ class ControlsFrame(ttk.Frame):
         valid = val.isdigit()
 
         if valid:
-            valid = int(val) <= data.nSpectra
+            valid = int(val) < data.nSpectra
 
         # rimozione 0 iniziale
         if not val:
@@ -770,12 +770,12 @@ class ControlsFrame(ttk.Frame):
         try:
             min = self.minIdxSpectra.get()
         except:
-            min = 1
+            min = 0
 
         try:
             max = self.maxIdxSpectra.get()
         except:
-            max = 2
+            max = 1
 
         valid = min < max
 
@@ -1031,16 +1031,16 @@ class ControlsFrame(ttk.Frame):
         try:
             rangeMin = self.minIdxSpectra.get()
         except:
-            rangeMin = 1
+            rangeMin = 0
         try:
             rangeMax = self.maxIdxSpectra.get()
         except:
-            rangeMax = 2
+            rangeMax = 1
 
         # plot degli spettri nel range indicato
         if not self.ax.lines:
 
-            for i in range(rangeMin - 1,rangeMax):
+            for i in range(rangeMin,rangeMax+1):
                 try:
                     # Se sono in fase di selezione o visualizzazione
                     if color is None:
