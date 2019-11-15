@@ -1093,6 +1093,11 @@ class ControlsFrame(ttk.Frame):
             self.maxIdxEntry.configure(state = tk.DISABLED)
             self.selectButton.configure(state = tk.DISABLED)
             self.selectedIdxSlider.configure(state = tk.DISABLED)
+            self.expModeRB2.configure(state = tk.DISABLED)
+            self.expModeRB3.configure(state = tk.DISABLED)
+            self.approxModeRB2.configure(state = tk.NORMAL)
+            self.approxModeRB2.configure(state = tk.DISABLED)
+
         else:
             self.minIdxEntry.configure(state = tk.NORMAL)
             self.maxIdxEntry.configure(state = tk.NORMAL)
