@@ -101,7 +101,7 @@ class PolyApproxIdx(PolyApprox):
 class PolyApproxMulti(PolyApprox):
     def __init__(self,data,polyOrd,thr,costFun,minIdx,maxIdx):
         PolyApprox.__init__(self,data,polyOrd,thr,costFun)
-        self.spectraData = self.spectraData[minIdx:maxIdx+1]
+        self.spectraData = self.spectraData[minIdx:maxIdx]
 
     def initialize(self):
         # Coefficienti del polinomio approssimante
