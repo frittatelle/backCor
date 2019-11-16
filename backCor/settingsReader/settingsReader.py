@@ -29,8 +29,10 @@ class UserSettingsReader():
         j = self.readJson(settingsFilePath)
 
         # Check e loading user settings
-        self.editSettings(j)
-
+        try:
+            self.editSettings(j)
+        except:
+            pass
 
 
     def printSettings(self):
