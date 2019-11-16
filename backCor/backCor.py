@@ -757,7 +757,7 @@ class ControlsFrame(ttk.Frame):
         valid = val.isdigit()
 
         if valid:
-            valid = int(val) < data.nSpectra
+            valid = int(val) <= data.nSpectra
 
         # rimozione 0 iniziale
         if not val:
