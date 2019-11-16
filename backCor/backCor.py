@@ -757,7 +757,7 @@ class ControlsFrame(ttk.Frame):
         valid = val.isdigit()
 
         if valid:
-            valid = int(val) <= data.nSpectra
+            valid = int(val) < data.nSpectra
 
         # rimozione 0 iniziale
         if not val:
@@ -887,12 +887,12 @@ class ControlsFrame(ttk.Frame):
                 polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),
                                            self.thrVal.get(),
                                            self.costFunVal.get(),
-                                           self.selectedIdx.get())
+                                           self.selectedIdx.get() - 1)
             elif mode == "Multiple":
                 polyApprox = PolyApproxMulti(data,self.polyOrdVal.get(),
                                              self.thrVal.get(),
                                              self.costFunVal.get(),
-                                             self.minIdxSpectra.get(),
+                                             self.minIdxSpectra.get() - 1,
                                              self.maxIdxSpectra.get())
         polyApprox.approx()
         polyApprox.spectraApprox = polyApprox.spectraApprox + shift
@@ -918,21 +918,21 @@ class ControlsFrame(ttk.Frame):
         else:
             if apxMode == "Single":
                 if expMode == "Single":
-                    polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
+                    polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get() - 1)
                     polyApprox.approx()
                     polyApprox.spectraApprox = polyApprox.spectraApprox + shift
                     cleanData.spectraData = data.spectraData[self.selectedIdx.get()] - polyApprox.spectraApprox
                     self.easyPlot(cleanData,self.plotColor)
 
                 elif expMode == "All":
-                    polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
+                    polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get() - 1)
                     polyApprox.approx()
                     polyApprox.spectraApprox = polyApprox.spectraApprox + shift
                     cleanData.spectraData = data.spectraData - polyApprox.spectraApprox
                     self.plotAll(cleanData,self.plotColor)
 
                 elif expMode == "View":
-                    polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get())
+                    polyApprox = PolyApproxIdx(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.selectedIdx.get() - 1)
                     polyApprox.approx()
                     polyApprox.spectraApprox = polyApprox.spectraApprox + shift
                     cleanData.spectraData = data.spectraData - polyApprox.spectraApprox
@@ -947,10 +947,10 @@ class ControlsFrame(ttk.Frame):
                     self.plotAll(cleanData,self.plotColor)
 
                 elif expMode == "View":
-                    polyApprox = PolyApproxMulti(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.minIdxSpectra.get(),self.maxIdxSpectra.get())
+                    polyApprox = PolyApproxMulti(data,self.polyOrdVal.get(),self.thrVal.get(),self.costFunVal.get(),self.minIdxSpectra.get() - 1,self.maxIdxSpectra.get())
                     polyApprox.approx()
                     polyApprox.spectraApprox = polyApprox.spectraApprox + shift
-                    cleanData.spectraData = data.spectraData[self.minIdxSpectra.get():self.maxIdxSpectra.get()+1] - polyApprox.spectraApprox.T
+                    cleanData.spectraData = data.spectraData[self.minIdxSpectra.get() - 1:self.maxIdxSpectra.get()] - polyApprox.spectraApprox.T
                     self.plotAll(cleanData,self.plotColor)
 
         self.canvas.draw()
@@ -1047,7 +1047,7 @@ class ControlsFrame(ttk.Frame):
                         self.ax.plot(data.ramanShift,data.spectraData[i])
                     else:
                         # Se lo spettro da plottare e' quello selezionato, plotta in colore selezione
-                        if i == self.selectedIdx.get() and self.approxMode.get() == "Single":
+                        if i == self.selectedIdx.get() - 1 and self.approxMode.get() == "Single":
                             self.ax.plot(data.ramanShift,data.spectraData[i],self.plotSelectedColor)
                         else:
                             self.ax.plot(data.ramanShift,data.spectraData[i],color)
@@ -1093,6 +1093,11 @@ class ControlsFrame(ttk.Frame):
             self.maxIdxEntry.configure(state = tk.DISABLED)
             self.selectButton.configure(state = tk.DISABLED)
             self.selectedIdxSlider.configure(state = tk.DISABLED)
+            self.expModeRB2.configure(state = tk.DISABLED)
+            self.expModeRB3.configure(state = tk.DISABLED)
+            self.approxModeRB2.configure(state = tk.NORMAL)
+            self.approxModeRB2.configure(state = tk.DISABLED)
+
         else:
             self.minIdxEntry.configure(state = tk.NORMAL)
             self.maxIdxEntry.configure(state = tk.NORMAL)
