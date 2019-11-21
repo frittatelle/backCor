@@ -12,7 +12,11 @@ class UserSettingsReader():
         self.basePath = basePath
         settingsFilePath = os.path.join(basePath,"data\\userData\\settings.json")
         self.settingsFilePath = settingsFilePath
-
+        self.costFunctions = {"","Symmetric Huber function",
+                                 "Asymmetric Huber function",
+                                 "Symmetric truncated quadratic",
+                                 "Asymmetric truncated quadratic",
+                                 "Asymmetric Indec function"}
         self.positiveInt = ["nsLimit","minPolyOrd","maxPolyOrd"]
         self.negativeInt = ["minCntsAdj","maxCntsAdj"]
         self.positiveFloat = ["minThrVal","maxThrVal"]
