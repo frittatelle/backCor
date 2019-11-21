@@ -139,7 +139,8 @@ class ControlsSettingsReader():
         self.costFunctions = ["Symmetric Huber function",
                               "Asymmetric Huber function",
                               "Symmetric truncated quadratic",
-                              "Asymmetric truncated quadratic"]
+                              "Asymmetric truncated quadratic",
+                              "Asymmetric Indec function"]
 
         self.valid = {}
         self.override = {}
