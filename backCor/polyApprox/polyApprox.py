@@ -39,6 +39,8 @@ class PolyApprox():
             self.costFun = "stq"
         elif costFun == "Asymmetric truncated quadratic":
             self.costFun = "atq"
+        elif costFun == "Asymmetric Indec function":
+            self.costFun = "aif"
 
     def standardize(self):
         maxF = np.amax(self.ramanShift)
@@ -84,6 +86,8 @@ class PolyApprox():
                 d = (res*(2*alpha-1)) * (np.abs(res)<thr) - res * (np.abs(res)>=thr)
             elif costFun == "atq":
                 d = (res*(2*alpha-1)) * (res<thr) - res * (res>=thr)
+            elif costFun == "aif":
+                d = (res*(2*alpha-1)) * (res<thr) - (res + alpha*(np.power(thr,3)/(2*np.power(res,2)))) * (res>=thr)
 
             # Estimate z
             self.polyCoeff = np.dot(self.Tinv,self.spectraData + d)
@@ -131,6 +135,8 @@ class PolyApproxMulti(PolyApprox):
                 d = (res*(2*alpha-1)) * (np.abs(res)<thr) - res * (np.abs(res)>=thr)
             elif costFun == "atq":
                 d = (res*(2*alpha-1)) * (res<thr) - res * (res>=thr)
+            elif costFun == "aif":
+                d = (res*(2*alpha-1)) * (res<thr) - (res + alpha*(np.power(thr,3)/(2*np.power(res,2)))) * (res>=thr)
 
             # Estimate z
             self.polyCoeff = np.dot(self.Tinv,(self.spectraData + d).T)

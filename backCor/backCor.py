@@ -611,7 +611,7 @@ class ControlsFrame(ttk.Frame):
         self.costFunVal = tk.StringVar()
         self.costFunVal.set("Symmetric Huber function")
         costFunLabel = ttk.Label(self,text = "Cost Function:")
-        self.costFunOptions = {"","Symmetric Huber function","Asymmetric Huber function","Symmetric truncated quadratic","Asymmetric truncated quadratic"}
+        self.costFunOptions = settings.costFunctions
         self.costFunMenu = ttk.OptionMenu(self, self.costFunVal,*self.costFunOptions,command = partial(self.costFunUpdate,data))
         self.costFunMenu.configure(state = tk.DISABLED)
 
